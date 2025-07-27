@@ -1,0 +1,454 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }} - School Management System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .search-section {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        padding: 40px 0;
+        margin-bottom: 30px;
+        border-radius: 15px;
+    }
+    
+    
+    .search-form {
+        background: white;
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .notice-card {
+        border-left: 4px solid #007bff;
+        transition: all 0.3s ease;
+        margin-bottom: 20px;
+    }
+    
+    .notice-card:hover {
+        border-left-color: #0056b3;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+    }
+    
+    .notice-meta {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+    
+    .notice-content {
+        line-height: 1.6;
+        margin: 15px 0;
+    }
+    
+    .filter-badge {
+        background-color: #e3f2fd;
+        color: #1976d2;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        margin-right: 8px;
+        margin-bottom: 8px;
+        display: inline-block;
+    }
+    
+    .no-notices {
+        text-align: center;
+        padding: 60px 20px;
+        background: #f8f9fa;
+        border-radius: 15px;
+        margin: 30px 0;
+    }
+    
+    .pagination-wrapper {
+        margin-top: 40px;
+        padding-top: 30px;
+        border-top: 1px solid #dee2e6;
+    }
+    
+    .search-stats {
+        background: #e8f4fd;
+        border: 1px solid #bee5eb;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 25px;
+    }
+    
+    .btn-clear-filters {
+        background: #dc3545;
+        border-color: #dc3545;
+        color: white;
+    }
+    
+    .btn-clear-filters:hover {
+        background: #c82333;
+        border-color: #bd2130;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="display-5 fw-bold mb-2">{{ page_title }}</h1>
+                    <p class="lead text-muted mb-0">{{ page_description }}</p>
+                </div>
+                <div class="text-end">
+                    <a href="{% url 'public:home' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-home me-2"></i>Back to Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter Section -->
+    <div class="search-section">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-10">
+                    <div class="search-form">
+                        <h4 class="mb-4 text-center">
+                            <i class="fas fa-search me-2"></i>Search Notices
+                        </h4>
+                        
+                        <form method="get" class="row g-3">
+                            <!-- Search Query -->
+                            <div class="col-md-12">
+                                <label for="search" class="form-label">Search by Title or Content</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-search"></i>
+                                    </span>
+                                    <input 
+                                        type="text" 
+                                        class="form-control" 
+                                        id="search" 
+                                        name="search" 
+                                        value="{{ search_query }}" 
+                                        placeholder="Enter keywords to search in notice titles and content..."
+                                    >
+                                </div>
+                            </div>
+                            
+                            <!-- Date Filters -->
+                            <div class="col-md-6">
+                                <label for="date_from" class="form-label">From Date</label>
+                                <input 
+                                    type="date" 
+                                    class="form-control" 
+                                    id="date_from" 
+                                    name="date_from" 
+                                    value="{{ date_from }}"
+                                >
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="date_to" class="form-label">To Date</label>
+                                <input 
+                                    type="date" 
+                                    class="form-control" 
+                                    id="date_to" 
+                                    name="date_to" 
+                                    value="{{ date_to }}"
+                                >
+                            </div>
+                            
+                            <!-- Action Buttons -->
+                            <div class="col-12 text-center">
+                                <button type="submit" class="btn btn-primary btn-lg me-3">
+                                    <i class="fas fa-search me-2"></i>Search Notices
+                                </button>
+                                
+                                {% if has_filters %}
+                                    <a href="{% url 'public:notices' %}" class="btn btn-clear-filters btn-lg">
+                                        <i class="fas fa-times me-2"></i>Clear Filters
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Results Summary -->
+    {% if has_filters %}
+        <div class="search-stats">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h6 class="mb-2">
+                        <i class="fas fa-filter me-2"></i>Search Results
+                    </h6>
+                    <p class="mb-0">
+                        Found <strong>{{ total_notices }}</strong> notice{{ total_notices|pluralize }} 
+                        {% if search_query %}matching "<strong>{{ search_query }}</strong>"{% endif %}
+                        {% if date_from or date_to %}
+                            {% if search_query %}and {% endif %}
+                            {% if date_from %}from <strong>{{ date_from }}</strong>{% endif %}
+                            {% if date_to %}to <strong>{{ date_to }}</strong>{% endif %}
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <div class="mt-2 mt-md-0">
+                        {% if search_query %}
+                            <span class="filter-badge">
+                                <i class="fas fa-search me-1"></i>{{ search_query }}
+                            </span>
+                        {% endif %}
+                        {% if date_from %}
+                            <span class="filter-badge">
+                                <i class="fas fa-calendar me-1"></i>From: {{ date_from }}
+                            </span>
+                        {% endif %}
+                        {% if date_to %}
+                            <span class="filter-badge">
+                                <i class="fas fa-calendar me-1"></i>To: {{ date_to }}
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Notices List -->
+    {% if notices %}
+        <div class="row">
+            <div class="col-12">
+                {% for notice in notices %}
+                    <div class="card notice-card">
+                        <div class="card-body">
+                            <!-- Notice Header -->
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <h4 class="card-title mb-0">{{ notice.title }}</h4>
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check-circle me-1"></i>Published
+                                </span>
+                            </div>
+                            
+                            <!-- Notice Meta Information -->
+                            <div class="notice-meta mb-3">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <i class="fas fa-calendar-alt me-2"></i>
+                                        <strong>Published:</strong> {{ notice.date_created|date:"F d, Y \a\t g:i A" }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <i class="fas fa-user me-2"></i>
+                                        <strong>By:</strong> {{ notice.created_by.get_full_name|default:notice.created_by.username }}
+                                    </div>
+                                </div>
+                                {% if notice.date_updated != notice.date_created %}
+                                    <div class="row mt-1">
+                                        <div class="col-12">
+                                            <i class="fas fa-edit me-2"></i>
+                                            <strong>Last Updated:</strong> {{ notice.date_updated|date:"F d, Y \a\t g:i A" }}
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Notice Content -->
+                            <div class="notice-content">
+                                {{ notice.content|linebreaks }}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        {% if notices.has_other_pages %}
+            <div class="pagination-wrapper">
+                <nav aria-label="Notice pagination">
+                    <ul class="pagination justify-content-center">
+                        <!-- Previous Page -->
+                        {% if notices.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if date_from %}date_from={{ date_from }}&{% endif %}{% if date_to %}date_to={{ date_to }}&{% endif %}page={{ notices.previous_page_number }}">
+                                    <i class="fas fa-chevron-left me-1"></i>Previous
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">
+                                    <i class="fas fa-chevron-left me-1"></i>Previous
+                                </span>
+                            </li>
+                        {% endif %}
+
+                        <!-- Page Numbers -->
+                        {% for num in notices.paginator.page_range %}
+                            {% if notices.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > notices.number|add:'-3' and num < notices.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if date_from %}date_from={{ date_from }}&{% endif %}{% if date_to %}date_to={{ date_to }}&{% endif %}page={{ num }}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        <!-- Next Page -->
+                        {% if notices.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if date_from %}date_from={{ date_from }}&{% endif %}{% if date_to %}date_to={{ date_to }}&{% endif %}page={{ notices.next_page_number }}">
+                                    Next<i class="fas fa-chevron-right ms-1"></i>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">
+                                    Next<i class="fas fa-chevron-right ms-1"></i>
+                                </span>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                
+                <!-- Pagination Info -->
+                <div class="text-center mt-3">
+                    <small class="text-muted">
+                        Showing {{ notices.start_index }} to {{ notices.end_index }} of {{ notices.paginator.count }} notice{{ notices.paginator.count|pluralize }}
+                    </small>
+                </div>
+            </div>
+        {% endif %}
+
+    {% else %}
+        <!-- No Notices Found -->
+        <div class="no-notices">
+            <i class="fas fa-search text-muted mb-4" style="font-size: 4rem; opacity: 0.3;"></i>
+            
+            {% if has_filters %}
+                <h3 class="text-muted mb-3">No Notices Found</h3>
+                <p class="text-muted mb-4">
+                    No notices match your search criteria. Try adjusting your filters or search terms.
+                </p>
+                <div class="mb-4">
+                    {% if search_query %}
+                        <span class="filter-badge">
+                            <i class="fas fa-search me-1"></i>{{ search_query }}
+                        </span>
+                    {% endif %}
+                    {% if date_from %}
+                        <span class="filter-badge">
+                            <i class="fas fa-calendar me-1"></i>From: {{ date_from }}
+                        </span>
+                    {% endif %}
+                    {% if date_to %}
+                        <span class="filter-badge">
+                            <i class="fas fa-calendar me-1"></i>To: {{ date_to }}
+                        </span>
+                    {% endif %}
+                </div>
+                <a href="{% url 'public:notices' %}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-list me-2"></i>View All Notices
+                </a>
+            {% else %}
+                <h3 class="text-muted mb-3">No Notices Available</h3>
+                <p class="text-muted mb-4">
+                    There are currently no published notices. Please check back later for updates.
+                </p>
+                <a href="{% url 'public:home' %}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-home me-2"></i>Back to Home
+                </a>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    <!-- Quick Actions -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card bg-light">
+                <div class="card-body text-center py-4">
+                    <h5 class="card-title mb-3">Looking for Something Else?</h5>
+                    <div class="d-flex justify-content-center gap-3 flex-wrap">
+                        <a href="{% url 'public:home' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-home me-2"></i>Home Page
+                        </a>
+                        <a href="{% url 'public:admission_form' %}" class="btn btn-outline-success">
+                            <i class="fas fa-graduation-cap me-2"></i>Apply for Admission
+                        </a>
+                        {% if not user.is_authenticated %}
+                            <a href="{% url 'public:register' %}" class="btn btn-outline-info">
+                                <i class="fas fa-user-plus me-2"></i>Create Account
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-focus search input when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('search');
+        if (searchInput && !searchInput.value) {
+            searchInput.focus();
+        }
+    });
+    
+    // Form validation for date inputs
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const dateFrom = document.getElementById('date_from').value;
+        const dateTo = document.getElementById('date_to').value;
+        
+        if (dateFrom && dateTo && dateFrom > dateTo) {
+            e.preventDefault();
+            alert('The "From Date" cannot be later than the "To Date". Please check your date selection.');
+            return false;
+        }
+    });
+    
+    // Clear individual filters
+    function clearFilter(filterName) {
+        const url = new URL(window.location);
+        url.searchParams.delete(filterName);
+        window.location.href = url.toString();
+    }
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // Ctrl/Cmd + K to focus search
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            document.getElementById('search').focus();
+        }
+        
+        // Escape to clear search
+        if (e.key === 'Escape' && document.activeElement.id === 'search') {
+            document.getElementById('search').value = '';
+        }
+    });
+    
+    // Add loading state to search button
+    document.querySelector('form').addEventListener('submit', function() {
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Searching...';
+        submitBtn.disabled = true;
+        
+        // Re-enable after 5 seconds in case of slow response
+        setTimeout(() => {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        }, 5000);
+    });
+</script>
+{% endblock %}

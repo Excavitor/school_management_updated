@@ -1,0 +1,218 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block title %}{{ application.student_name }} - Application Details{% endblock %}
+
+{% block page_title %}Application Details{% endblock %}
+
+{% block page_actions %}
+    <div class="btn-group" role="group">
+        <a href="{% url 'dashboard:application_list' %}" class="btn btn-secondary btn-sm">
+            <i class="fas fa-arrow-left me-1"></i>Back to List
+        </a>
+        <a href="{% url 'dashboard:application_edit' application.id %}" class="btn btn-warning btn-sm">
+            <i class="fas fa-edit me-1"></i>Edit
+        </a>
+        <a href="{% url 'dashboard:application_delete' application.id %}" class="btn btn-danger btn-sm">
+            <i class="fas fa-trash me-1"></i>Delete
+        </a>
+    </div>
+{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <!-- Application Information -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-user-graduate me-2"></i>Application Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Student Information -->
+                        <div class="col-md-6">
+                            <h6 class="text-primary mb-3">
+                                <i class="fas fa-child me-2"></i>Student Information
+                            </h6>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td class="fw-bold text-muted">Name:</td>
+                                    <td>{{ application.student_name }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold text-muted">Date of Birth:</td>
+                                    <td>
+                                        {{ application.student_dob|date:"F d, Y" }}
+                                        {% if application.get_student_age %}
+                                            <span class="badge bg-info ms-2">{{ application.get_student_age }} years old</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold text-muted">Enrolled Class:</td>
+                                    <td>
+                                        <span class="badge bg-primary">{{ application.enrolled_class }}</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold text-muted">Address:</td>
+                                    <td>{{ application.address|linebreaks }}</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- Guardian Information -->
+                        <div class="col-md-6">
+                            <h6 class="text-success mb-3">
+                                <i class="fas fa-user-friends me-2"></i>Guardian Information
+                            </h6>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td class="fw-bold text-muted">Name:</td>
+                                    <td>{{ application.guardian_name }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold text-muted">Mobile:</td>
+                                    <td>
+                                        <i class="fas fa-phone me-1"></i>
+                                        <a href="tel:{{ application.guardian_mobile }}" class="text-decoration-none">
+                                            {{ application.get_formatted_mobile }}
+                                        </a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold text-muted">Email:</td>
+                                    <td>
+                                        <i class="fas fa-envelope me-1"></i>
+                                        <a href="mailto:{{ application.guardian_email }}" class="text-decoration-none">
+                                            {{ application.guardian_email }}
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Additional Message -->
+                    {% if application.message %}
+                        <hr>
+                        <h6 class="text-info mb-3">
+                            <i class="fas fa-comment me-2"></i>Additional Message
+                        </h6>
+                        <div class="bg-light p-3 rounded">
+                            {{ application.message|linebreaks }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Status and Actions -->
+        <div class="col-lg-4">
+            <!-- Current Status -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Application Status
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <span class="badge bg-{{ application.get_status_display_color }} fs-6 px-3 py-2">
+                            {{ application.get_status_display }}
+                        </span>
+                    </div>
+                    <small class="text-muted">
+                        <i class="fas fa-calendar me-1"></i>
+                        Submitted: {{ application.date_submitted|date:"M d, Y g:i A" }}
+                    </small>
+                    <br>
+                    <small class="text-muted">
+                        <i class="fas fa-clock me-1"></i>
+                        {% with days_ago=application.date_submitted|timesince %}
+                            {{ days_ago }} ago
+                        {% endwith %}
+                    </small>
+                </div>
+            </div>
+
+            <!-- Status Update Form -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-edit me-2"></i>Update Status
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="status" class="form-label">New Status</label>
+                            <select class="form-select" id="status" name="status" required>
+                                {% for value, display in status_choices %}
+                                    <option value="{{ value }}" {% if application.status == value %}selected{% endif %}>
+                                        {{ display }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>Update Status
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Application Statistics -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>Quick Stats
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="border-end">
+                                <h4 class="text-primary">{{ application.id }}</h4>
+                                <small class="text-muted">Application ID</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <h4 class="text-success">
+                                {% with days_since=application.date_submitted|timesince %}
+                                    {% if 'day' in days_since %}
+                                        {{ days_since|cut:' ago'|cut:'days'|cut:'day'|cut:','|cut:' ' }}d
+                                    {% else %}
+                                        <1d
+                                    {% endif %}
+                                {% endwith %}
+                            </h4>
+                            <small class="text-muted">Days Old</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Confirmation for status changes
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const currentStatus = '{{ application.get_status_display }}';
+        const newStatus = document.getElementById('status').selectedOptions[0].text;
+        
+        if (currentStatus !== newStatus) {
+            if (!confirm(`Are you sure you want to change the status from "${currentStatus}" to "${newStatus}"?`)) {
+                e.preventDefault();
+            }
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,332 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }} - School Management System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .hero-section {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 80px 0;
+        margin-bottom: 50px;
+    }
+    
+    .hero-content h1 {
+        font-size: 3.5rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+    }
+    
+    .hero-content p {
+        font-size: 1.25rem;
+        margin-bottom: 2rem;
+        opacity: 0.9;
+    }
+    
+    .feature-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border: none;
+        border-radius: 15px;
+        overflow: hidden;
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+    
+    .feature-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+    
+    .notice-card {
+        border-left: 4px solid #007bff;
+        transition: all 0.3s ease;
+    }
+    
+    .notice-card:hover {
+        border-left-color: #0056b3;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .stats-section {
+        background-color: #f8f9fa;
+        padding: 60px 0;
+        margin: 50px 0;
+    }
+    
+    .stat-item {
+        text-align: center;
+        padding: 20px;
+    }
+    
+    .stat-number {
+        font-size: 3rem;
+        font-weight: 700;
+        color: #007bff;
+        display: block;
+    }
+    
+    .stat-label {
+        font-size: 1.1rem;
+        color: #6c757d;
+        margin-top: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <div class="hero-content">
+                    <h1>Welcome to Our School</h1>
+                    <p class="lead">{{ page_description }}</p>
+                    <div class="hero-buttons">
+                        <a href="{% url 'public:notices' %}" class="btn btn-light btn-lg me-3">
+                            <i class="fas fa-bullhorn me-2"></i>View Notices
+                        </a>
+                        <a href="{% url 'public:admission_form' %}" class="btn btn-outline-light btn-lg">
+                            <i class="fas fa-graduation-cap me-2"></i>Apply for Admission
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 text-center">
+                <i class="fas fa-school" style="font-size: 8rem; opacity: 0.3;"></i>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Quick Access Features -->
+<section class="container mb-5">
+    <div class="row text-center mb-5">
+        <div class="col-12">
+            <h2 class="display-5 fw-bold mb-3">Quick Access</h2>
+            <p class="lead text-muted">Everything you need in one place</p>
+        </div>
+    </div>
+    
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card feature-card h-100 text-center p-4">
+                <div class="card-body">
+                    <div class="feature-icon text-primary">
+                        <i class="fas fa-bullhorn"></i>
+                    </div>
+                    <h4 class="card-title">School Notices</h4>
+                    <p class="card-text">Stay updated with the latest announcements, events, and important information from our school.</p>
+                    <a href="{% url 'public:notices' %}" class="btn btn-primary">
+                        View All Notices <i class="fas fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card feature-card h-100 text-center p-4">
+                <div class="card-body">
+                    <div class="feature-icon text-success">
+                        <i class="fas fa-user-graduate"></i>
+                    </div>
+                    <h4 class="card-title">Admission Application</h4>
+                    <p class="card-text">Apply for admission to our school with our simple and secure online application form.</p>
+                    <a href="{% url 'public:admission_form' %}" class="btn btn-success">
+                        Apply Now <i class="fas fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card feature-card h-100 text-center p-4">
+                <div class="card-body">
+                    <div class="feature-icon text-info">
+                        <i class="fas fa-user-plus"></i>
+                    </div>
+                    <h4 class="card-title">Create Account</h4>
+                    <p class="card-text">Register for an account to access additional features and stay connected with our school community.</p>
+                    {% if not user.is_authenticated %}
+                        <a href="{% url 'public:register' %}" class="btn btn-info">
+                            Register Now <i class="fas fa-arrow-right ms-1"></i>
+                        </a>
+                    {% else %}
+                        <a href="#dashboard" class="btn btn-info">
+                            Go to Dashboard <i class="fas fa-arrow-right ms-1"></i>
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Statistics Section -->
+<section class="stats-section">
+    <div class="container">
+        <div class="row text-center mb-5">
+            <div class="col-12">
+                <h2 class="display-5 fw-bold mb-3">School at a Glance</h2>
+                <p class="lead text-muted">Our achievements and current status</p>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-4">
+                <div class="stat-item">
+                    <span class="stat-number">{{ total_notices }}</span>
+                    <div class="stat-label">Published Notices</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-item">
+                    <span class="stat-number">{{ recent_notices|length }}</span>
+                    <div class="stat-label">Recent Updates</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-item">
+                    <span class="stat-number">24/7</span>
+                    <div class="stat-label">Online Access</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Recent Notices Section -->
+<section class="container mb-5">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2 class="display-6 fw-bold">Latest Notices</h2>
+            <p class="text-muted">Stay informed with our most recent announcements</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="{% url 'public:notices' %}" class="btn btn-outline-primary">
+                View All Notices <i class="fas fa-arrow-right ms-1"></i>
+            </a>
+        </div>
+    </div>
+    
+    {% if recent_notices %}
+        <div class="row g-4">
+            {% for notice in recent_notices %}
+                <div class="col-lg-6">
+                    <div class="card notice-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <h5 class="card-title mb-0">{{ notice.title }}</h5>
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar-alt me-1"></i>
+                                    {{ notice.date_created|date:"M d, Y" }}
+                                </small>
+                            </div>
+                            
+                            <p class="card-text">{{ notice.get_excerpt }}</p>
+                            
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    <i class="fas fa-user me-1"></i>
+                                    By {{ notice.created_by.get_full_name|default:notice.created_by.username }}
+                                </small>
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check-circle me-1"></i>Published
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        
+        {% if recent_notices|length == 5 %}
+            <div class="text-center mt-4">
+                <p class="text-muted mb-3">Showing latest 5 notices</p>
+                <a href="{% url 'public:notices' %}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-list me-2"></i>View All {{ total_notices }} Notices
+                </a>
+            </div>
+        {% endif %}
+    {% else %}
+        <div class="row">
+            <div class="col-12">
+                <div class="card border-0 bg-light">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-bullhorn text-muted mb-3" style="font-size: 4rem; opacity: 0.3;"></i>
+                        <h4 class="text-muted">No Notices Available</h4>
+                        <p class="text-muted mb-4">There are currently no published notices. Please check back later for updates.</p>
+                        {% comment %}
+                        {% if user.is_authenticated and user.is_admin_or_above %}
+                            <a href="#create-notice" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>Create First Notice
+                            </a>
+                        {% endif %}
+                        {% endcomment %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</section>
+
+<!-- Call to Action Section -->
+<section class="container mb-5">
+    <div class="row">
+        <div class="col-12">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center py-5">
+                    <h3 class="card-title mb-3">Ready to Join Our School Community?</h3>
+                    <p class="card-text lead mb-4">Take the first step towards quality education and a bright future.</p>
+                    <div class="d-flex justify-content-center gap-3 flex-wrap">
+                        <a href="{% url 'public:admission_form' %}" class="btn btn-light btn-lg">
+                            <i class="fas fa-graduation-cap me-2"></i>Apply for Admission
+                        </a>
+                        
+                        {% if not user.is_authenticated %}
+                            <a href="{% url 'public:register' %}" class="btn btn-outline-light btn-lg">
+                                <i class="fas fa-user-plus me-2"></i>Create Account
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Add smooth scrolling for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            document.querySelector(this.getAttribute('href')).scrollIntoView({
+                behavior: 'smooth'
+            });
+        });
+    });
+    
+    // Add loading animation for buttons
+    document.querySelectorAll('.btn').forEach(button => {
+        button.addEventListener('click', function() {
+            if (this.href && !this.href.includes('#')) {
+                const originalText = this.innerHTML;
+                this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Loading...';
+                this.disabled = true;
+                
+                // Re-enable after 3 seconds in case of slow navigation
+                setTimeout(() => {
+                    this.innerHTML = originalText;
+                    this.disabled = false;
+                }, 3000);
+            }
+        });
+    });
+</script>
+{% endblock %}

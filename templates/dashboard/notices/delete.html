@@ -1,0 +1,201 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Delete Notice - Dashboard{% endblock %}
+
+{% block page_title %}Delete Notice{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'dashboard:notice_list' %}" class="btn btn-outline-secondary">
+    <i class="fas fa-arrow-left me-2"></i>Back to Notices
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Delete Notice
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- Loading indicator -->
+                <div id="loadingIndicator" class="text-center py-4">
+                    <div class="spinner-border text-danger" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading notice details...</p>
+                </div>
+                
+                <!-- Confirmation content (initially hidden) -->
+                <div id="confirmationContent" style="display: none;">
+                    <div class="alert alert-danger" role="alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Warning!</strong> This action cannot be undone.
+                    </div>
+                    
+                    <p class="mb-3">Are you sure you want to delete the following notice?</p>
+                    
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title" id="noticeTitle">Loading...</h5>
+                            <p class="card-text" id="noticeContent">Loading...</p>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <small class="text-muted">
+                                        <i class="fas fa-user me-1"></i>Created by: <span id="createdBy">Loading...</span>
+                                    </small>
+                                </div>
+                                <div class="col-md-6">
+                                    <small class="text-muted">
+                                        <i class="fas fa-calendar me-1"></i>Created: <span id="createdDate">Loading...</span>
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <span id="publishedStatus" class="badge">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <button type="button" class="btn btn-danger" onclick="confirmDelete()">
+                                <i class="fas fa-trash me-2"></i>Yes, Delete Notice
+                            </button>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <a href="{% url 'dashboard:notice_list' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let noticeId = null;
+
+// Get notice ID from URL
+function getNoticeIdFromUrl() {
+    const pathParts = window.location.pathname.split('/');
+    const deleteIndex = pathParts.indexOf('delete');
+    if (deleteIndex > 0) {
+        return pathParts[deleteIndex - 1];
+    }
+    return null;
+}
+
+// Get CSRF token
+function getCsrfToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+           document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+}
+
+// Load notice data
+async function loadNotice() {
+    noticeId = getNoticeIdFromUrl();
+    
+    if (!noticeId) {
+        showAlert('error', 'Invalid notice ID');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/dashboard/api/notices/${noticeId}/`, {
+            headers: {
+                'X-CSRFToken': getCsrfToken()
+            },
+            credentials: 'same-origin'
+        });
+        
+        if (response.ok) {
+            const notice = await response.json();
+            populateNoticeDetails(notice);
+            document.getElementById('loadingIndicator').style.display = 'none';
+            document.getElementById('confirmationContent').style.display = 'block';
+        } else {
+            const data = await response.json();
+            showAlert('error', data.error || 'Failed to load notice');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showAlert('error', 'An error occurred while loading the notice');
+    }
+}
+
+// Populate notice details
+function populateNoticeDetails(notice) {
+    document.getElementById('noticeTitle').textContent = notice.title || 'Untitled Notice';
+    document.getElementById('noticeContent').textContent = notice.content ? 
+        (notice.content.length > 200 ? notice.content.substring(0, 200) + '...' : notice.content) : 
+        'No content';
+    document.getElementById('createdBy').textContent = notice.created_by_name || 'Unknown';
+    document.getElementById('createdDate').textContent = new Date(notice.date_created).toLocaleDateString();
+    
+    const statusBadge = document.getElementById('publishedStatus');
+    if (notice.published) {
+        statusBadge.textContent = 'Published';
+        statusBadge.className = 'badge bg-success';
+    } else {
+        statusBadge.textContent = 'Draft';
+        statusBadge.className = 'badge bg-warning';
+    }
+}
+
+// Confirm delete
+async function confirmDelete() {
+    try {
+        const response = await fetch(`/dashboard/api/notices/${noticeId}/`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': getCsrfToken()
+            },
+            credentials: 'same-origin'
+        });
+        
+        if (response.ok) {
+            showAlert('success', 'Notice deleted successfully');
+            setTimeout(() => {
+                window.location.href = '{% url "dashboard:notice_list" %}';
+            }, 1000);
+        } else {
+            const data = await response.json();
+            showAlert('error', data.error || 'Failed to delete notice');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showAlert('error', 'An error occurred while deleting the notice');
+    }
+}
+
+// Show alert messages
+function showAlert(type, message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    // Insert at the top of the main content
+    const mainContent = document.querySelector('main .container-fluid');
+    mainContent.insertBefore(alertDiv, mainContent.firstChild);
+    
+    // Auto-hide after 5 seconds
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+
+// Load notice data when page loads
+window.addEventListener('load', loadNotice);
+</script>
+{% endblock %}

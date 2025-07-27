@@ -1,0 +1,42 @@
+## 🔧 Initial Setup Instructions
+
+After cloning the repo and setting up `.env` and DB:
+
+```bash
+python manage.py makemigrations
+python manage.py migrate
+python manage.py setup_default_roles
+```
+
+🔹 2. User registration now uses null role by default
+New users will automatically have null role (equivalent to old Guest role) with limited permissions.
+No additional setup needed - the system handles default permissions for users without roles.
+
+🔹 3. If migrating from existing Guest role setup:
+```bash
+python manage.py migrate_guest_users
+```
+This command will migrate existing Guest role users to null role and remove the Guest role.
+
+## 🔧 Django Superuser Support
+
+Django superusers created with `python manage.py createsuperuser` now automatically have full permissions:
+- They bypass all role-based permission checks
+- Display as "SuperAdmin (Django Superuser)" in the interface
+- Have access to all dashboard features and CRUD operations
+
+Optional: Assign explicit SuperAdmin role to Django superusers:
+```bash
+python manage.py assign_superadmin_role
+```
+
+## 🔧 Role System Changes
+
+- Removed Guest role from database
+- New users get null role by default
+- Users with null role have same permissions as old Guest role:
+  - can_view_dashboard: True
+  - All other permissions: False
+- System roles are now: SuperAdmin, Admin, Teacher
+- Custom roles can still be created and deleted
+- Django superusers automatically have all permissions regardless of role

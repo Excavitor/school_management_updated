@@ -1,0 +1,345 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+{% load dashboard_extras %}
+
+{% block title %}Edit Role: {{ role.name }} - Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .permission-group {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        background: #f8f9fa;
+    }
+    .permission-item {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+    .permission-item:last-child {
+        border-bottom: none;
+    }
+    .permission-checkbox {
+        margin-right: 0.75rem;
+    }
+    .permission-label {
+        font-weight: 500;
+        color: #495057;
+    }
+    .system-role-warning {
+        background-color: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>Edit Role: {{ role.name }}</h2>
+                <div>
+                    <a href="{% url 'dashboard:role_detail' role.pk %}" class="btn btn-outline-info me-2">
+                        <i class="fas fa-eye"></i> View Details
+                    </a>
+                    <a href="{% url 'dashboard:role_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Roles
+                    </a>
+                </div>
+            </div>
+
+            {% if role.name in 'SuperAdmin,Admin,Teacher' %}
+                <div class="system-role-warning">
+                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                    <strong>System Role:</strong> This is a system role. Be careful when modifying its permissions as it may affect system functionality.
+                </div>
+            {% endif %}
+
+            <div class="card">
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <!-- Basic Information -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label for="name" class="form-label">Role Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control {% if errors.name %}is-invalid{% endif %}" 
+                                       id="name" name="name" value="{{ form_data.name|default:role.name }}" required>
+                                {% if errors.name %}
+                                    <div class="invalid-feedback">{{ errors.name }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <label for="description" class="form-label">Description</label>
+                                <textarea class="form-control" id="description" name="description" 
+                                          rows="3" placeholder="Describe the role and its responsibilities...">{{ form_data.description|default:role.description }}</textarea>
+                            </div>
+                        </div>
+
+                        <!-- Permissions -->
+                        <div class="mb-4">
+                            <h5>Permissions</h5>
+                            <p class="text-muted">Select the permissions this role should have:</p>
+                            
+                            <!-- Dashboard Permission -->
+                            <div class="permission-group">
+                                <h6 class="mb-3"><i class="fas fa-tachometer-alt me-2"></i>Dashboard Access</h6>
+                                <div class="permission-item">
+                                    <input type="checkbox" class="form-check-input permission-checkbox" 
+                                           id="can_view_dashboard" name="can_view_dashboard"
+                                           {% if form_data.can_view_dashboard or role.permissions.can_view_dashboard %}checked{% endif %}>
+                                    <label class="permission-label" for="can_view_dashboard">
+                                        Can view dashboard
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Notice Permissions -->
+                            <div class="permission-group">
+                                <h6 class="mb-3"><i class="fas fa-bullhorn me-2"></i>Notice Management</h6>
+                                <div class="permission-item">
+                                    <input type="checkbox" class="form-check-input permission-checkbox" 
+                                           id="can_view_notice" name="can_view_notice"
+                                           {% if form_data.can_view_notice or role.permissions.can_view_notice %}checked{% endif %}>
+                                    <label class="permission-label" for="can_view_notice">
+                                        Can view notices
+                                    </label>
+                                </div>
+                                <div class="permission-item">
+                                    <input type="checkbox" class="form-check-input permission-checkbox" 
+                                           id="can_add_notice" name="can_add_notice"
+                                           {% if form_data.can_add_notice or role.permissions.can_add_notice %}checked{% endif %}>
+                                    <label class="permission-label" for="can_add_notice">
+                                        Can add notices
+                                    </label>
+                                </div>
+                                <div class="permission-item">
+                                    <input type="checkbox" class="form-check-input permission-checkbox" 
+                                           id="can_update_notice" name="can_update_notice"
+                                           {% if form_data.can_update_notice or role.permissions.can_update_notice %}checked{% endif %}>
+                                    <label class="permission-label" for="can_update_notice">
+                                        Can update notices
+                                    </label>
+                                </div>
+                                <div class="permission-item">
+                                    <input type="checkbox" class="form-check-input permission-checkbox" 
+                                           id="can_delete_notice" name="can_delete_notice"
+                                           {% if form_data.can_delete_notice or role.permissions.can_delete_notice %}checked{% endif %}>
+                                    <label class="permission-label" for="can_delete_notice">
+                                        Can delete notices
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Application Permissions -->
+                            <div class="permission-group">
+                                <h6 class="mb-3"><i class="fas fa-file-alt me-2"></i>Application Management</h6>
+                                <div class="permission-item">
+                                    <input type="checkbox" class="form-check-input permission-checkbox" 
+                                           id="can_view_application" name="can_view_application"
+                                           {% if form_data.can_view_application or role.permissions.can_view_application %}checked{% endif %}>
+                                    <label class="permission-label" for="can_view_application">
+                                        Can view applications
+                                    </label>
+                                </div>
+                                <div class="permission-item">
+                                    <input type="checkbox" class="form-check-input permission-checkbox" 
+                                           id="can_add_application" name="can_add_application"
+                                           {% if form_data.can_add_application or role.permissions.can_add_application %}checked{% endif %}>
+                                    <label class="permission-label" for="can_add_application">
+                                        Can add applications
+                                    </label>
+                                </div>
+                                <div class="permission-item">
+                                    <input type="checkbox" class="form-check-input permission-checkbox" 
+                                           id="can_update_application" name="can_update_application"
+                                           {% if form_data.can_update_application or role.permissions.can_update_application %}checked{% endif %}>
+                                    <label class="permission-label" for="can_update_application">
+                                        Can update applications
+                                    </label>
+                                </div>
+                                <div class="permission-item">
+                                    <input type="checkbox" class="form-check-input permission-checkbox" 
+                                           id="can_delete_application" name="can_delete_application"
+                                           {% if form_data.can_delete_application or role.permissions.can_delete_application %}checked{% endif %}>
+                                    <label class="permission-label" for="can_delete_application">
+                                        Can delete applications
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- User Permissions -->
+                            <div class="permission-group">
+                                <h6 class="mb-3"><i class="fas fa-users me-2"></i>User Management</h6>
+                                <div class="permission-item">
+                                    <input type="checkbox" class="form-check-input permission-checkbox" 
+                                           id="can_view_user" name="can_view_user"
+                                           {% if form_data.can_view_user or role.permissions.can_view_user %}checked{% endif %}>
+                                    <label class="permission-label" for="can_view_user">
+                                        Can view users
+                                    </label>
+                                </div>
+                                <div class="permission-item">
+                                    <input type="checkbox" class="form-check-input permission-checkbox" 
+                                           id="can_add_user" name="can_add_user"
+                                           {% if form_data.can_add_user or role.permissions.can_add_user %}checked{% endif %}>
+                                    <label class="permission-label" for="can_add_user">
+                                        Can add users
+                                    </label>
+                                </div>
+                                <div class="permission-item">
+                                    <input type="checkbox" class="form-check-input permission-checkbox" 
+                                           id="can_update_user" name="can_update_user"
+                                           {% if form_data.can_update_user or role.permissions.can_update_user %}checked{% endif %}>
+                                    <label class="permission-label" for="can_update_user">
+                                        Can update users
+                                    </label>
+                                </div>
+                                <div class="permission-item">
+                                    <input type="checkbox" class="form-check-input permission-checkbox" 
+                                           id="can_delete_user" name="can_delete_user"
+                                           {% if form_data.can_delete_user or role.permissions.can_delete_user %}checked{% endif %}>
+                                    <label class="permission-label" for="can_delete_user">
+                                        Can delete users
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Role Permissions -->
+                            <div class="permission-group">
+                                <h6 class="mb-3"><i class="fas fa-user-tag me-2"></i>Role Management</h6>
+                                <div class="permission-item">
+                                    <input type="checkbox" class="form-check-input permission-checkbox" 
+                                           id="can_view_role" name="can_view_role"
+                                           {% if form_data.can_view_role or role.permissions.can_view_role %}checked{% endif %}>
+                                    <label class="permission-label" for="can_view_role">
+                                        Can view roles
+                                    </label>
+                                </div>
+                                <div class="permission-item">
+                                    <input type="checkbox" class="form-check-input permission-checkbox" 
+                                           id="can_add_role" name="can_add_role"
+                                           {% if form_data.can_add_role or role.permissions.can_add_role %}checked{% endif %}>
+                                    <label class="permission-label" for="can_add_role">
+                                        Can add roles
+                                    </label>
+                                </div>
+                                <div class="permission-item">
+                                    <input type="checkbox" class="form-check-input permission-checkbox" 
+                                           id="can_update_role" name="can_update_role"
+                                           {% if form_data.can_update_role or role.permissions.can_update_role %}checked{% endif %}>
+                                    <label class="permission-label" for="can_update_role">
+                                        Can update roles
+                                    </label>
+                                </div>
+                                <div class="permission-item">
+                                    <input type="checkbox" class="form-check-input permission-checkbox" 
+                                           id="can_delete_role" name="can_delete_role"
+                                           {% if form_data.can_delete_role or role.permissions.can_delete_role %}checked{% endif %}>
+                                    <label class="permission-label" for="can_delete_role">
+                                        Can delete roles
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Other Permissions -->
+                            <div class="permission-group">
+                                <h6 class="mb-3"><i class="fas fa-cogs me-2"></i>Other Permissions</h6>
+                                <div class="permission-item">
+                                    <input type="checkbox" class="form-check-input permission-checkbox" 
+                                           id="can_export_data" name="can_export_data"
+                                           {% if form_data.can_export_data or role.permissions.can_export_data %}checked{% endif %}>
+                                    <label class="permission-label" for="can_export_data">
+                                        Can export data
+                                    </label>
+                                </div>
+                                <div class="permission-item">
+                                    <input type="checkbox" class="form-check-input permission-checkbox" 
+                                           id="can_view_reports" name="can_view_reports"
+                                           {% if form_data.can_view_reports or role.permissions.can_view_reports %}checked{% endif %}>
+                                    <label class="permission-label" for="can_view_reports">
+                                        Can view reports
+                                    </label>
+                                </div>
+                                <div class="permission-item">
+                                    <input type="checkbox" class="form-check-input permission-checkbox" 
+                                           id="can_moderate_content" name="can_moderate_content"
+                                           {% if form_data.can_moderate_content or role.permissions.can_moderate_content %}checked{% endif %}>
+                                    <label class="permission-label" for="can_moderate_content">
+                                        Can moderate content
+                                    </label>
+                                </div>
+                                <div class="permission-item">
+                                    <input type="checkbox" class="form-check-input permission-checkbox" 
+                                           id="can_access_settings" name="can_access_settings"
+                                           {% if form_data.can_access_settings or role.permissions.can_access_settings %}checked{% endif %}>
+                                    <label class="permission-label" for="can_access_settings">
+                                        Can access settings
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Update Role
+                            </button>
+                            <a href="{% url 'dashboard:role_detail' role.pk %}" class="btn btn-outline-info">
+                                <i class="fas fa-eye"></i> View Details
+                            </a>
+                            <a href="{% url 'dashboard:role_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add select all/none functionality
+    const permissionGroup = document.querySelector('.permission-group');
+    const selectAllBtn = document.createElement('button');
+    selectAllBtn.type = 'button';
+    selectAllBtn.className = 'btn btn-sm btn-outline-primary me-2';
+    selectAllBtn.innerHTML = '<i class="fas fa-check-square"></i> Select All';
+    
+    const selectNoneBtn = document.createElement('button');
+    selectNoneBtn.type = 'button';
+    selectNoneBtn.className = 'btn btn-sm btn-outline-secondary';
+    selectNoneBtn.innerHTML = '<i class="fas fa-square"></i> Select None';
+    
+    const buttonContainer = document.createElement('div');
+    buttonContainer.className = 'mb-3';
+    buttonContainer.appendChild(selectAllBtn);
+    buttonContainer.appendChild(selectNoneBtn);
+    
+    permissionGroup.insertBefore(buttonContainer, permissionGroup.querySelector('h6').nextSibling);
+    
+    selectAllBtn.addEventListener('click', function() {
+        const checkboxes = permissionGroup.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(cb => cb.checked = true);
+    });
+    
+    selectNoneBtn.addEventListener('click', function() {
+        const checkboxes = permissionGroup.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(cb => cb.checked = false);
+    });
+});
+</script>
+{% endblock %}

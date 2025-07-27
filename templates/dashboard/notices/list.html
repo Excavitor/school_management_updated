@@ -1,0 +1,478 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Notice Management - Dashboard{% endblock %}
+
+{% block page_title %}Notice Management{% endblock %}
+
+{% block page_actions %}
+{% if user.role.permissions.can_add_notice %}
+<a href="{% url 'dashboard:notice_create' %}" class="btn btn-primary">
+    <i class="fas fa-plus me-2"></i>Create New Notice
+</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Search and Filter Form -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-search me-2"></i>Search & Filter Notices
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-4">
+                        <label for="search" class="form-label">Search</label>
+                        <input type="text" class="form-control" id="search" name="search" 
+                               value="{{ search_query }}" placeholder="Search by title or content...">
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <label for="published" class="form-label">Status</label>
+                        <select class="form-select" id="published" name="published">
+                            <option value="all" {% if published_filter == 'all' %}selected{% endif %}>All</option>
+                            <option value="true" {% if published_filter == 'true' %}selected{% endif %}>Published</option>
+                            <option value="false" {% if published_filter == 'false' %}selected{% endif %}>Draft</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <label for="date_from" class="form-label">From Date</label>
+                        <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from }}">
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <label for="date_to" class="form-label">To Date</label>
+                        <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to }}">
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <label for="ordering" class="form-label">Sort By</label>
+                        <select class="form-select" id="ordering" name="ordering">
+                            <option value="-date_created" {% if ordering == '-date_created' %}selected{% endif %}>Newest First</option>
+                            <option value="date_created" {% if ordering == 'date_created' %}selected{% endif %}>Oldest First</option>
+                            <option value="title" {% if ordering == 'title' %}selected{% endif %}>Title A-Z</option>
+                            <option value="-title" {% if ordering == '-title' %}selected{% endif %}>Title Z-A</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search me-2"></i>Search
+                        </button>
+                        <a href="{% url 'dashboard:notice_list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>Clear
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Notices List -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-bullhorn me-2"></i>Notices 
+                    {% if total_notices %}
+                        <span class="badge bg-secondary">{{ total_notices }}</span>
+                    {% endif %}
+                </h5>
+                
+                {% if has_filters %}
+                    <small class="text-muted">
+                        <i class="fas fa-filter me-1"></i>Filtered results
+                    </small>
+                {% endif %}
+            </div>
+            
+            <div class="card-body">
+                {% if notices %}
+                    <!-- Bulk Actions -->
+                    {% if user.role.permissions.can_update_notice or user.role.permissions.can_delete_notice %}
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="btn-group" role="group">
+                                {% if user.role.permissions.can_update_notice %}
+                                <button type="button" class="btn btn-outline-success btn-sm" onclick="bulkAction('publish')">
+                                    <i class="fas fa-eye me-1"></i>Publish Selected
+                                </button>
+                                <button type="button" class="btn btn-outline-warning btn-sm" onclick="bulkAction('unpublish')">
+                                    <i class="fas fa-eye-slash me-1"></i>Unpublish Selected
+                                </button>
+                                {% endif %}
+                                {% if user.role.permissions.can_delete_notice %}
+                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="bulkAction('delete')">
+                                    <i class="fas fa-trash me-1"></i>Delete Selected
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <label class="form-check-label">
+                                <input type="checkbox" id="selectAll" class="form-check-input me-2">
+                                Select All
+                            </label>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Notices Table -->
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th width="40">
+                                        <input type="checkbox" id="selectAllHeader" class="form-check-input">
+                                    </th>
+                                    <th>Title</th>
+                                    <th>Status</th>
+                                    <th>Created By</th>
+                                    <th>Created Date</th>
+                                    <th>Updated Date</th>
+                                    <th width="200">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for notice in notices %}
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" class="form-check-input notice-checkbox" value="{{ notice.id }}">
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold">{{ notice.title|truncatechars:50 }}</div>
+                                        <small class="text-muted">{{ notice.content|truncatechars:100 }}</small>
+                                    </td>
+                                    <td>
+                                        {% if notice.published %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-eye me-1"></i>Published
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-warning">
+                                                <i class="fas fa-eye-slash me-1"></i>Draft
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-user-circle me-2 text-muted"></i>
+                                            <div>
+                                                <div class="fw-bold">{{ notice.created_by.get_full_name|default:notice.created_by.username }}</div>
+                                                <small class="text-muted">{{ notice.created_by.role.name }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div>{{ notice.date_created|date:"M d, Y" }}</div>
+                                        <small class="text-muted">{{ notice.date_created|time:"g:i A" }}</small>
+                                    </td>
+                                    <td>
+                                        <div>{{ notice.date_updated|date:"M d, Y" }}</div>
+                                        <small class="text-muted">{{ notice.date_updated|time:"g:i A" }}</small>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            {% if user.role.permissions.can_update_notice %}
+                                            <a href="{% url 'dashboard:notice_edit' notice.id %}" 
+                                               class="btn btn-outline-primary btn-sm" title="Edit">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            
+                                            <button type="button" class="btn btn-outline-secondary btn-sm" 
+                                                    onclick="togglePublish({{ notice.id }}, {{ notice.published|yesno:'true,false' }})"
+                                                    title="{% if notice.published %}Unpublish{% else %}Publish{% endif %}">
+                                                {% if notice.published %}
+                                                    <i class="fas fa-eye-slash"></i>
+                                                {% else %}
+                                                    <i class="fas fa-eye"></i>
+                                                {% endif %}
+                                            </button>
+                                            {% endif %}
+                                            
+                                            {% if user.role.permissions.can_delete_notice %}
+                                            <button type="button" class="btn btn-outline-danger btn-sm" 
+                                                    onclick="deleteNotice({{ notice.id }}, '{{ notice.title|escapejs }}')"
+                                                    title="Delete">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    {% if notices.has_other_pages %}
+                        <nav aria-label="Notice pagination" class="mt-4">
+                            <ul class="pagination justify-content-center">
+                                {% if notices.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if published_filter != 'all' %}published={{ published_filter }}&{% endif %}{% if date_from %}date_from={{ date_from }}&{% endif %}{% if date_to %}date_to={{ date_to }}&{% endif %}{% if ordering %}ordering={{ ordering }}&{% endif %}page={{ notices.previous_page_number }}">
+                                            <i class="fas fa-chevron-left"></i> Previous
+                                        </a>
+                                    </li>
+                                {% endif %}
+
+                                {% for num in notices.paginator.page_range %}
+                                    {% if notices.number == num %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ num }}</span>
+                                        </li>
+                                    {% elif num > notices.number|add:'-3' and num < notices.number|add:'3' %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if published_filter != 'all' %}published={{ published_filter }}&{% endif %}{% if date_from %}date_from={{ date_from }}&{% endif %}{% if date_to %}date_to={{ date_to }}&{% endif %}{% if ordering %}ordering={{ ordering }}&{% endif %}page={{ num }}">{{ num }}</a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+
+                                {% if notices.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if published_filter != 'all' %}published={{ published_filter }}&{% endif %}{% if date_from %}date_from={{ date_from }}&{% endif %}{% if date_to %}date_to={{ date_to }}&{% endif %}{% if ordering %}ordering={{ ordering }}&{% endif %}page={{ notices.next_page_number }}">
+                                            Next <i class="fas fa-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+
+                        <div class="text-center text-muted">
+                            <small>
+                                Showing {{ notices.start_index }} to {{ notices.end_index }} of {{ notices.paginator.count }} notices
+                            </small>
+                        </div>
+                    {% endif %}
+
+                {% else %}
+                    <!-- No Notices Found -->
+                    <div class="text-center py-5">
+                        <i class="fas fa-bullhorn fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No notices found</h5>
+                        {% if has_filters %}
+                            <p class="text-muted">Try adjusting your search criteria or <a href="{% url 'dashboard:notice_list' %}">clear all filters</a>.</p>
+                        {% else %}
+                            <p class="text-muted">Get started by creating your first notice.</p>
+                            <a href="{% url 'dashboard:notice_create' %}" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>Create First Notice
+                            </a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modals -->
+<div class="modal fade" id="confirmModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmModalTitle">Confirm Action</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="confirmModalBody">
+                Are you sure you want to perform this action?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmModalAction">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Get CSRF token
+function getCsrfToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+           document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+}
+
+// Select all functionality
+document.getElementById('selectAll').addEventListener('change', function() {
+    const checkboxes = document.querySelectorAll('.notice-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = this.checked;
+    });
+});
+
+document.getElementById('selectAllHeader').addEventListener('change', function() {
+    document.getElementById('selectAll').checked = this.checked;
+    document.getElementById('selectAll').dispatchEvent(new Event('change'));
+});
+
+// Toggle publish status
+async function togglePublish(noticeId, currentStatus) {
+    try {
+        const response = await fetch(`/dashboard/api/notices/${noticeId}/`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({ published: !currentStatus })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            // Show success message
+            showAlert('success', data.message);
+            // Reload page to reflect changes
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showAlert('error', data.error || 'Failed to update notice status');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showAlert('error', 'An error occurred while updating the notice');
+    }
+}
+
+// Delete single notice
+function deleteNotice(noticeId, noticeTitle) {
+    showConfirmModal(
+        'Delete Notice',
+        `Are you sure you want to delete the notice "${noticeTitle}"? This action cannot be undone.`,
+        'Delete',
+        'btn-danger',
+        async () => {
+            try {
+                const response = await fetch(`/dashboard/api/notices/${noticeId}/`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': getCsrfToken()
+                    },
+                    credentials: 'same-origin'
+                });
+                
+                if (response.ok) {
+                    showAlert('success', 'Notice deleted successfully');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    const data = await response.json();
+                    showAlert('error', data.error || 'Failed to delete notice');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('error', 'An error occurred while deleting the notice');
+            }
+        }
+    );
+}
+
+// Bulk actions
+function bulkAction(action) {
+    const selectedNotices = Array.from(document.querySelectorAll('.notice-checkbox:checked')).map(cb => cb.value);
+    
+    if (selectedNotices.length === 0) {
+        showAlert('warning', 'Please select at least one notice');
+        return;
+    }
+    
+    let actionText = '';
+    let confirmClass = 'btn-primary';
+    
+    switch (action) {
+        case 'publish':
+            actionText = 'publish';
+            confirmClass = 'btn-success';
+            break;
+        case 'unpublish':
+            actionText = 'unpublish';
+            confirmClass = 'btn-warning';
+            break;
+        case 'delete':
+            actionText = 'delete';
+            confirmClass = 'btn-danger';
+            break;
+    }
+    
+    showConfirmModal(
+        `Bulk ${actionText.charAt(0).toUpperCase() + actionText.slice(1)}`,
+        `Are you sure you want to ${actionText} ${selectedNotices.length} selected notice(s)?`,
+        actionText.charAt(0).toUpperCase() + actionText.slice(1),
+        confirmClass,
+        async () => {
+            try {
+                const response = await fetch('/dashboard/api/notices/bulk_action/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken()
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                        ids: selectedNotices,
+                        action: action
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showAlert('success', data.message);
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showAlert('error', data.error || `Failed to ${actionText} notices`);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('error', `An error occurred while ${actionText}ing notices`);
+            }
+        }
+    );
+}
+
+// Show confirmation modal
+function showConfirmModal(title, body, actionText, actionClass, callback) {
+    document.getElementById('confirmModalTitle').textContent = title;
+    document.getElementById('confirmModalBody').textContent = body;
+    
+    const actionButton = document.getElementById('confirmModalAction');
+    actionButton.textContent = actionText;
+    actionButton.className = `btn ${actionClass}`;
+    
+    // Remove existing event listeners
+    const newActionButton = actionButton.cloneNode(true);
+    actionButton.parentNode.replaceChild(newActionButton, actionButton);
+    
+    // Add new event listener
+    newActionButton.addEventListener('click', () => {
+        callback();
+        bootstrap.Modal.getInstance(document.getElementById('confirmModal')).hide();
+    });
+    
+    new bootstrap.Modal(document.getElementById('confirmModal')).show();
+}
+
+// Show alert messages
+function showAlert(type, message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    // Insert at the top of the main content
+    const mainContent = document.querySelector('main .container-fluid');
+    mainContent.insertBefore(alertDiv, mainContent.firstChild);
+    
+    // Auto-hide after 5 seconds
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+</script>
+{% endblock %}

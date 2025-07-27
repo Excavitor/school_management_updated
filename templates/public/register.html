@@ -1,0 +1,877 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }} - School Management System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .registration-hero {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        color: white;
+        padding: 60px 0;
+        margin-bottom: 40px;
+    }
+    
+    
+    .form-container {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        padding: 40px;
+        margin-bottom: 40px;
+    }
+    
+    .form-section {
+        margin-bottom: 40px;
+        padding-bottom: 30px;
+        border-bottom: 2px solid #f8f9fa;
+    }
+    
+    .form-section:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+    }
+    
+    .section-title {
+        color: #007bff;
+        font-weight: 600;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #e9ecef;
+    }
+    
+    .form-label {
+        font-weight: 500;
+        color: #495057;
+        margin-bottom: 8px;
+    }
+    
+    .required-field::after {
+        content: " *";
+        color: #dc3545;
+        font-weight: bold;
+    }
+    
+    .form-control, .form-select {
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        padding: 12px 15px;
+        font-size: 16px;
+        transition: all 0.3s ease;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+    
+    .form-text {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin-top: 5px;
+    }
+    
+    .password-strength {
+        margin-top: 10px;
+    }
+    
+    .password-strength-bar {
+        height: 4px;
+        border-radius: 2px;
+        background: #e9ecef;
+        overflow: hidden;
+        margin-bottom: 5px;
+    }
+    
+    .password-strength-fill {
+        height: 100%;
+        transition: all 0.3s ease;
+        border-radius: 2px;
+    }
+    
+    .strength-weak { background: #dc3545; width: 25%; }
+    .strength-fair { background: #ffc107; width: 50%; }
+    .strength-good { background: #28a745; width: 75%; }
+    .strength-strong { background: #20c997; width: 100%; }
+    
+    .password-requirements {
+        font-size: 0.8rem;
+        margin-top: 5px;
+    }
+    
+    .requirement {
+        display: flex;
+        align-items: center;
+        margin-bottom: 2px;
+    }
+    
+    .requirement-icon {
+        width: 16px;
+        height: 16px;
+        margin-right: 8px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        font-weight: bold;
+    }
+    
+    .requirement-met {
+        background: #28a745;
+        color: white;
+    }
+    
+    .requirement-unmet {
+        background: #dc3545;
+        color: white;
+    }
+    
+    .captcha-section {
+        background: #f8f9fa;
+        border: 2px solid #dee2e6;
+        border-radius: 10px;
+        padding: 25px;
+        margin: 20px 0;
+    }
+    
+    .captcha-section h6 {
+        color: #495057;
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+    
+    .btn-submit {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        border: none;
+        padding: 15px 40px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        border-radius: 50px;
+        color: white;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+    }
+    
+    .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4);
+        color: white;
+    }
+    
+    .btn-submit:disabled {
+        opacity: 0.6;
+        transform: none;
+        box-shadow: none;
+    }
+    
+    .error-message {
+        background: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+        padding: 12px 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .success-message {
+        background: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .field-error {
+        color: #dc3545;
+        font-size: 0.875rem;
+        margin-top: 5px;
+        display: block;
+    }
+    
+    .form-control.is-invalid, .form-select.is-invalid {
+        border-color: #dc3545;
+    }
+    
+    .info-card {
+        background: #e3f2fd;
+        border: 1px solid #bbdefb;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 30px;
+    }
+    
+    .progress-indicator {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 30px;
+        text-align: center;
+    }
+    
+    .loading-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .loading-content {
+        background: white;
+        padding: 30px;
+        border-radius: 15px;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+    
+    @media (max-width: 768px) {
+        .form-container {
+            padding: 20px;
+            margin: 0 10px 40px 10px;
+        }
+        
+        .registration-hero {
+            padding: 40px 0;
+        }
+        
+        .btn-submit {
+            width: 100%;
+            padding: 15px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="registration-hero">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h1 class="display-4 fw-bold mb-3">Create Your Account</h1>
+                <p class="lead mb-4">Join our school community and get access to additional features. Registration is quick, secure, and completely free.</p>
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-shield-alt me-2"></i>
+                    <span>Secure registration with data protection</span>
+                </div>
+            </div>
+            <div class="col-lg-4 text-center">
+                <i class="fas fa-user-plus" style="font-size: 6rem; opacity: 0.3;"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Success Message -->
+    {% if success_message %}
+        <div class="success-message">
+            <div class="text-center mb-4">
+                <i class="fas fa-check-circle text-success mb-3" style="font-size: 4rem;"></i>
+                <h3 class="text-success mb-3">{{ success_message.title }}</h3>
+                <p class="lead">{{ success_message.message }}</p>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-8 mx-auto">
+                    <h5 class="mb-3">Next Steps:</h5>
+                    <ul class="list-group list-group-flush">
+                        {% for step in success_message.next_steps %}
+                            <li class="list-group-item border-0 px-0">
+                                <i class="fas fa-check text-success me-2"></i>{{ step }}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                    
+                    <div class="text-center mt-4">
+                        <a href="{% url 'public:home' %}" class="btn btn-primary me-3">
+                            <i class="fas fa-home me-2"></i>Back to Home
+                        </a>
+                        <a href="#login" class="btn btn-outline-primary">
+                            <i class="fas fa-sign-in-alt me-2"></i>Login Now
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <!-- Information Card -->
+        <div class="info-card">
+            <div class="row">
+                <div class="col-md-8">
+                    <h5 class="mb-3">
+                        <i class="fas fa-info-circle me-2"></i>Registration Benefits
+                    </h5>
+                    <ul class="mb-0">
+                        <li>Access to personalized dashboard and features</li>
+                        <li>Receive important notifications and updates</li>
+                        <li>Track your applications and submissions</li>
+                        <li>Secure account with role-based access</li>
+                    </ul>
+                </div>
+                <div class="col-md-4 text-center">
+                    <div class="mt-3 mt-md-0">
+                        <i class="fas fa-user-shield text-primary mb-2" style="font-size: 2rem;"></i>
+                        <p class="mb-0 text-muted">Safe & Secure</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if not success_message %}
+        <!-- Progress Indicator -->
+        <div class="progress-indicator">
+            <div class="d-flex justify-content-center align-items-center">
+                <i class="fas fa-user-plus me-2 text-primary"></i>
+                <span class="fw-bold">Step 1 of 1: Complete Registration Form</span>
+            </div>
+        </div>
+
+        <!-- Registration Form -->
+        <div class="form-container">
+        <form method="post" id="registrationForm" novalidate>
+            {% csrf_token %}
+            
+            <!-- Display form errors -->
+            {% if form.non_field_errors %}
+                <div class="error-message">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Please correct the following errors:</strong>
+                    <ul class="mb-0 mt-2">
+                        {% for error in form.non_field_errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+
+            <!-- No hidden fields needed for Google reCAPTCHA -->
+
+            <!-- Personal Information Section -->
+            <div class="form-section">
+                <h4 class="section-title">
+                    <i class="fas fa-user me-2"></i>Personal Information
+                </h4>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.first_name.id_for_label }}" class="form-label required-field">
+                            {{ form.first_name.label }}
+                        </label>
+                        {{ form.first_name }}
+                        {% if form.first_name.errors %}
+                            {% for error in form.first_name.errors %}
+                                <div class="field-error">{{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
+                        <div class="form-text">{{ form.first_name.help_text }}</div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.last_name.id_for_label }}" class="form-label required-field">
+                            {{ form.last_name.label }}
+                        </label>
+                        {{ form.last_name }}
+                        {% if form.last_name.errors %}
+                            {% for error in form.last_name.errors %}
+                                <div class="field-error">{{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
+                        <div class="form-text">{{ form.last_name.help_text }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Account Information Section -->
+            <div class="form-section">
+                <h4 class="section-title">
+                    <i class="fas fa-user-cog me-2"></i>Account Information
+                </h4>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.username.id_for_label }}" class="form-label required-field">
+                            {{ form.username.label }}
+                        </label>
+                        {{ form.username }}
+                        {% if form.username.errors %}
+                            {% for error in form.username.errors %}
+                                <div class="field-error">{{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
+                        <div class="form-text">{{ form.username.help_text }}</div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.email.id_for_label }}" class="form-label required-field">
+                            {{ form.email.label }}
+                        </label>
+                        {{ form.email }}
+                        {% if form.email.errors %}
+                            {% for error in form.email.errors %}
+                                <div class="field-error">{{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
+                        <div class="form-text">{{ form.email.help_text }}</div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-12 mb-3">
+                        <label for="{{ form.phone_number.id_for_label }}" class="form-label required-field">
+                            {{ form.phone_number.label }}
+                        </label>
+                        {{ form.phone_number }}
+                        {% if form.phone_number.errors %}
+                            {% for error in form.phone_number.errors %}
+                                <div class="field-error">{{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
+                        <div class="form-text">{{ form.phone_number.help_text }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Password Section -->
+            <div class="form-section">
+                <h4 class="section-title">
+                    <i class="fas fa-lock me-2"></i>Password Security
+                </h4>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.password1.id_for_label }}" class="form-label required-field">
+                            {{ form.password1.label }}
+                        </label>
+                        {{ form.password1 }}
+                        {% if form.password1.errors %}
+                            {% for error in form.password1.errors %}
+                                <div class="field-error">{{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
+                        <div class="form-text">{{ form.password1.help_text }}</div>
+                        
+                        <!-- Password Strength Indicator -->
+                        <div class="password-strength" id="passwordStrength" style="display: none;">
+                            <div class="password-strength-bar">
+                                <div class="password-strength-fill" id="strengthFill"></div>
+                            </div>
+                            <div class="password-requirements">
+                                <div class="requirement" id="lengthReq">
+                                    <div class="requirement-icon requirement-unmet">✗</div>
+                                    <span>At least 8 characters</span>
+                                </div>
+                                <div class="requirement" id="letterReq">
+                                    <div class="requirement-icon requirement-unmet">✗</div>
+                                    <span>Contains letters</span>
+                                </div>
+                                <div class="requirement" id="numberReq">
+                                    <div class="requirement-icon requirement-unmet">✗</div>
+                                    <span>Contains numbers</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.password2.id_for_label }}" class="form-label required-field">
+                            {{ form.password2.label }}
+                        </label>
+                        {{ form.password2 }}
+                        {% if form.password2.errors %}
+                            {% for error in form.password2.errors %}
+                                <div class="field-error">{{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
+                        <div class="form-text">{{ form.password2.help_text }}</div>
+                        
+                        <!-- Password Match Indicator -->
+                        <div class="password-match" id="passwordMatch" style="display: none; margin-top: 10px;">
+                            <div class="requirement">
+                                <div class="requirement-icon requirement-unmet" id="matchIcon">✗</div>
+                                <span id="matchText">Passwords do not match</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security Verification Section -->
+            <div class="form-section">
+                <h4 class="section-title">
+                    <i class="fas fa-shield-alt me-2"></i>Security Verification
+                </h4>
+                
+                <div class="captcha-section">
+                    <div class="row justify-content-center">
+                        <div class="col-md-8">
+                            <div class="text-center mb-3">
+                                <h6 class="text-muted">
+                                    <i class="fas fa-shield-alt me-2"></i>Security Verification
+                                </h6>
+                                <p class="text-muted mb-0">Please complete the reCAPTCHA to verify you're human</p>
+                            </div>
+                            <div class="d-flex justify-content-center">
+                                {{ form.captcha }}
+                            </div>
+                            {% if form.captcha.errors %}
+                                <div class="text-center mt-2">
+                                    {% for error in form.captcha.errors %}
+                                        <div class="field-error">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Terms and Conditions -->
+            <div class="form-section">
+                <div class="form-check" required>
+                    <input class="form-check-input" type="checkbox" id="terms" required>
+                    <label class="form-check-label" for="terms">
+                        I agree to the <a href="#" target="_blank">Terms and Conditions</a> and <a href="#" target="_blank">Privacy Policy</a>. I confirm that all information provided is accurate and truthful. <span class="text-danger">*</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="text-center">
+                <button type="submit" class="btn btn-submit" id="submitBtn">
+                    <i class="fas fa-user-plus me-2"></i>Create Account
+                </button>
+                <div class="mt-3">
+                    <small class="text-muted">
+                        <i class="fas fa-lock me-1"></i>
+                        Your information is secure and will be used only for account management
+                    </small>
+                </div>
+                <div class="mt-2">
+                    <small class="text-muted">
+                        Already have an account? <a href="#login">Login here</a>
+                    </small>
+                </div>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+
+    <!-- Additional Information -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card border-0 bg-light h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-question-circle text-primary mb-3" style="font-size: 2rem;"></i>
+                    <h5>Need Help?</h5>
+                    <p class="text-muted">Contact our support team for assistance</p>
+                    <p class="mb-0"><strong>Email:</strong> support@school.edu</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-0 bg-light h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-shield-alt text-success mb-3" style="font-size: 2rem;"></i>
+                    <h5>Data Security</h5>
+                    <p class="text-muted">Your personal information is protected</p>
+                    <p class="mb-0"><strong>Secure:</strong> SSL encrypted transmission</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-content">
+        <div class="spinner-border text-primary mb-3" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <h5>Creating Your Account</h5>
+        <p class="text-muted mb-0">Please wait while we set up your account...</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('registrationForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    
+    // Password strength checking
+    const password1Field = document.getElementById('{{ form.password1.id_for_label }}');
+    const password2Field = document.getElementById('{{ form.password2.id_for_label }}');
+    const strengthIndicator = document.getElementById('passwordStrength');
+    const strengthFill = document.getElementById('strengthFill');
+    const matchIndicator = document.getElementById('passwordMatch');
+    const matchIcon = document.getElementById('matchIcon');
+    const matchText = document.getElementById('matchText');
+    
+    // Phone number formatting
+    const phoneField = document.getElementById('{{ form.phone_number.id_for_label }}');
+    if (phoneField) {
+        phoneField.addEventListener('input', function() {
+            // Remove non-digits
+            let value = this.value.replace(/\D/g, '');
+            
+            // Limit to 11 digits
+            if (value.length > 11) {
+                value = value.substring(0, 11);
+            }
+            
+            // Ensure it starts with 01
+            if (value.length > 0 && !value.startsWith('01')) {
+                if (value.startsWith('1')) {
+                    value = '0' + value;
+                } else if (!value.startsWith('0')) {
+                    value = '01' + value;
+                }
+            }
+            
+            this.value = value;
+        });
+    }
+    
+    // Password strength checker
+    if (password1Field) {
+        password1Field.addEventListener('input', function() {
+            const password = this.value;
+            
+            if (password.length > 0) {
+                strengthIndicator.style.display = 'block';
+                
+                // Check requirements
+                const lengthReq = document.getElementById('lengthReq');
+                const letterReq = document.getElementById('letterReq');
+                const numberReq = document.getElementById('numberReq');
+                
+                // Length check
+                if (password.length >= 8) {
+                    lengthReq.querySelector('.requirement-icon').className = 'requirement-icon requirement-met';
+                    lengthReq.querySelector('.requirement-icon').textContent = '✓';
+                } else {
+                    lengthReq.querySelector('.requirement-icon').className = 'requirement-icon requirement-unmet';
+                    lengthReq.querySelector('.requirement-icon').textContent = '✗';
+                }
+                
+                // Letter check
+                if (/[A-Za-z]/.test(password)) {
+                    letterReq.querySelector('.requirement-icon').className = 'requirement-icon requirement-met';
+                    letterReq.querySelector('.requirement-icon').textContent = '✓';
+                } else {
+                    letterReq.querySelector('.requirement-icon').className = 'requirement-icon requirement-unmet';
+                    letterReq.querySelector('.requirement-icon').textContent = '✗';
+                }
+                
+                // Number check
+                if (/\d/.test(password)) {
+                    numberReq.querySelector('.requirement-icon').className = 'requirement-icon requirement-met';
+                    numberReq.querySelector('.requirement-icon').textContent = '✓';
+                } else {
+                    numberReq.querySelector('.requirement-icon').className = 'requirement-icon requirement-unmet';
+                    numberReq.querySelector('.requirement-icon').textContent = '✗';
+                }
+                
+                // Calculate strength
+                let strength = 0;
+                if (password.length >= 8) strength++;
+                if (/[A-Za-z]/.test(password)) strength++;
+                if (/\d/.test(password)) strength++;
+                if (/[^A-Za-z\d]/.test(password)) strength++;
+                
+                // Update strength bar
+                strengthFill.className = 'password-strength-fill';
+                if (strength === 1) {
+                    strengthFill.classList.add('strength-weak');
+                } else if (strength === 2) {
+                    strengthFill.classList.add('strength-fair');
+                } else if (strength === 3) {
+                    strengthFill.classList.add('strength-good');
+                } else if (strength >= 4) {
+                    strengthFill.classList.add('strength-strong');
+                }
+            } else {
+                strengthIndicator.style.display = 'none';
+            }
+            
+            // Check password match
+            checkPasswordMatch();
+        });
+    }
+    
+    // Password match checker
+    function checkPasswordMatch() {
+        if (password2Field && password2Field.value.length > 0) {
+            matchIndicator.style.display = 'block';
+            
+            if (password1Field.value === password2Field.value) {
+                matchIcon.className = 'requirement-icon requirement-met';
+                matchIcon.textContent = '✓';
+                matchText.textContent = 'Passwords match';
+            } else {
+                matchIcon.className = 'requirement-icon requirement-unmet';
+                matchIcon.textContent = '✗';
+                matchText.textContent = 'Passwords do not match';
+            }
+        } else {
+            matchIndicator.style.display = 'none';
+        }
+    }
+    
+    if (password2Field) {
+        password2Field.addEventListener('input', checkPasswordMatch);
+    }
+    
+    // Form validation
+    function validateForm() {
+        let isValid = true;
+        const requiredFields = form.querySelectorAll('[required]');
+        
+        requiredFields.forEach(field => {
+            if (!field.value.trim()) {
+                field.classList.add('is-invalid');
+                isValid = false;
+            } else {
+                field.classList.remove('is-invalid');
+            }
+        });
+        
+        // Validate phone number format
+        if (phoneField && phoneField.value) {
+            const phonePattern = /^01[0-9]{9}$/;
+            if (!phonePattern.test(phoneField.value)) {
+                phoneField.classList.add('is-invalid');
+                isValid = false;
+            } else {
+                phoneField.classList.remove('is-invalid');
+            }
+        }
+        
+        // Validate email format
+        const emailField = document.getElementById('{{ form.email.id_for_label }}');
+        if (emailField && emailField.value) {
+            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailPattern.test(emailField.value)) {
+                emailField.classList.add('is-invalid');
+                isValid = false;
+            } else {
+                emailField.classList.remove('is-invalid');
+            }
+        }
+        
+        // Validate password match
+        if (password1Field && password2Field) {
+            if (password1Field.value !== password2Field.value) {
+                password2Field.classList.add('is-invalid');
+                isValid = false;
+            } else {
+                password2Field.classList.remove('is-invalid');
+            }
+        }
+        
+        return isValid;
+    }
+    
+    // Real-time validation
+    form.addEventListener('input', function(e) {
+        if (e.target.hasAttribute('required')) {
+            if (e.target.value.trim()) {
+                e.target.classList.remove('is-invalid');
+            }
+        }
+    });
+    
+    // Form submission
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (!validateForm()) {
+            // Scroll to first error
+            const firstError = form.querySelector('.is-invalid');
+            if (firstError) {
+                firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                firstError.focus();
+            }
+            return;
+        }
+        
+        // Show loading overlay
+        loadingOverlay.style.display = 'flex';
+        submitBtn.disabled = true;
+        
+        // Submit form
+        this.submit();
+    });
+    
+    // Prevent multiple submissions
+    let isSubmitting = false;
+    form.addEventListener('submit', function() {
+        if (isSubmitting) {
+            return false;
+        }
+        isSubmitting = true;
+    });
+    
+    // Auto-save form data to localStorage (optional)
+    const formFields = form.querySelectorAll('input, select, textarea');
+    formFields.forEach(field => {
+        // Load saved data
+        const savedValue = localStorage.getItem('registration_' + field.name);
+        if (savedValue && field.type !== 'hidden' && field.type !== 'password') {
+            field.value = savedValue;
+        }
+        
+        // Save data on change (except passwords)
+        field.addEventListener('change', function() {
+            if (this.type !== 'hidden' && this.type !== 'password' && this.name !== 'csrfmiddlewaretoken') {
+                localStorage.setItem('registration_' + this.name, this.value);
+            }
+        });
+    });
+    
+    // Clear saved data on successful submission
+    if (window.location.search.includes('success=1')) {
+        formFields.forEach(field => {
+            localStorage.removeItem('registration_' + field.name);
+        });
+    }
+    
+    // Username availability checker (optional enhancement)
+    const usernameField = document.getElementById('{{ form.username.id_for_label }}');
+    if (usernameField) {
+        let usernameTimeout;
+        usernameField.addEventListener('input', function() {
+            clearTimeout(usernameTimeout);
+            const username = this.value.trim();
+            
+            if (username.length >= 3) {
+                usernameTimeout = setTimeout(() => {
+                    // You could add an AJAX call here to check username availability
+                    // For now, we'll just do client-side validation
+                }, 500);
+            }
+        });
+    }
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // Ctrl/Cmd + Enter to submit form
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            e.preventDefault();
+            form.dispatchEvent(new Event('submit'));
+        }
+    });
+});
+</script>
+{% endblock %}

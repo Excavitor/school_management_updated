@@ -1,0 +1,188 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Edit Application - {{ application.student_name }}{% endblock %}
+
+{% block page_title %}Edit Application{% endblock %}
+
+{% block page_actions %}
+    <div class="btn-group" role="group">
+        <a href="{% url 'dashboard:application_detail' application.id %}" class="btn btn-secondary btn-sm">
+            <i class="fas fa-arrow-left me-1"></i>Back to Details
+        </a>
+        <a href="{% url 'dashboard:application_list' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-list me-1"></i>All Applications
+        </a>
+    </div>
+{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <!-- Edit Form -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-edit me-2"></i>Edit Application for {{ application.student_name }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <!-- Status Update Section -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label for="status" class="form-label">
+                                    <i class="fas fa-flag me-1"></i>Application Status
+                                </label>
+                                <select class="form-select" id="status" name="status" required>
+                                    {% for value, display in status_choices %}
+                                        <option value="{{ value }}" {% if application.status == value %}selected{% endif %}>
+                                            {{ display }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">
+                                    Current status: 
+                                    <span class="badge bg-{{ application.get_status_display_color }}">
+                                        {{ application.get_status_display }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>Update Application
+                            </button>
+                            <a href="{% url 'dashboard:application_detail' application.id %}" class="btn btn-secondary">
+                                <i class="fas fa-times me-1"></i>Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Application Summary -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Application Summary
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless table-sm">
+                        <tr>
+                            <td class="fw-bold text-muted">Student:</td>
+                            <td>{{ application.student_name }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-muted">Class:</td>
+                            <td>
+                                <span class="badge bg-primary">{{ application.enrolled_class }}</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-muted">Age:</td>
+                            <td>
+                                {% if application.get_student_age %}
+                                    {{ application.get_student_age }} years
+                                {% else %}
+                                    Not calculated
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-muted">Guardian:</td>
+                            <td>{{ application.guardian_name }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-muted">Mobile:</td>
+                            <td>{{ application.get_formatted_mobile }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-muted">Email:</td>
+                            <td>{{ application.guardian_email }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-muted">Submitted:</td>
+                            <td>
+                                <small>
+                                    {{ application.date_submitted|date:"M d, Y" }}<br>
+                                    <span class="text-muted">
+                                        {% with days_ago=application.date_submitted|timesince %}
+                                            {{ days_ago }} ago
+                                        {% endwith %}
+                                    </span>
+                                </small>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Status Change History (Placeholder for future enhancement) -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-history me-2"></i>Status History
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center text-muted">
+                        <i class="fas fa-clock fa-2x mb-2"></i>
+                        <p class="small">Status change history will be available in future updates.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Form validation and confirmation
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const currentStatus = '{{ application.get_status_display }}';
+        const newStatusSelect = document.getElementById('status');
+        const newStatus = newStatusSelect.selectedOptions[0].text;
+        
+        if (currentStatus !== newStatus) {
+            if (!confirm(`Are you sure you want to change the status from "${currentStatus}" to "${newStatus}"?`)) {
+                e.preventDefault();
+                return false;
+            }
+        }
+        
+        // Show loading state
+        const submitBtn = document.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Updating...';
+        submitBtn.disabled = true;
+        
+        // Re-enable if form submission fails
+        setTimeout(() => {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        }, 5000);
+    });
+
+    // Highlight status changes
+    document.getElementById('status').addEventListener('change', function() {
+        const currentStatus = '{{ application.status }}';
+        const newStatus = this.value;
+        
+        if (currentStatus !== newStatus) {
+            this.classList.add('border-warning');
+            this.classList.add('bg-warning-subtle');
+        } else {
+            this.classList.remove('border-warning');
+            this.classList.remove('bg-warning-subtle');
+        }
+    });
+</script>
+{% endblock %}

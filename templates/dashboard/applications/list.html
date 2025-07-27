@@ -1,0 +1,310 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Application Management - Dashboard{% endblock %}
+
+{% block page_title %}Application Management{% endblock %}
+
+{% block page_actions %}
+    <div class="btn-group" role="group">
+        <a href="{% url 'dashboard:application_export' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" 
+           class="btn btn-success btn-sm">
+            <i class="fas fa-download me-1"></i>Export CSV
+        </a>
+    </div>
+{% endblock %}
+
+{% block content %}
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ total_applications }}</h4>
+                            <p class="card-text">Total Applications</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-file-alt fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ pending_count }}</h4>
+                            <p class="card-text">Pending</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-clock fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ accepted_count }}</h4>
+                            <p class="card-text">Accepted</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-check-circle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ rejected_count }}</h4>
+                            <p class="card-text">Rejected</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-times-circle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter Form -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-search me-2"></i>Search & Filter Applications
+            </h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="search" class="form-label">Search</label>
+                    <input type="text" class="form-control" id="search" name="search" 
+                           value="{{ search_query }}" 
+                           placeholder="Student name, guardian name, class, mobile, email...">
+                </div>
+                <div class="col-md-2">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Status</option>
+                        {% for value, display in status_choices %}
+                            <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>
+                                {{ display }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="enrolled_class" class="form-label">Class</label>
+                    <input type="text" class="form-control" id="enrolled_class" name="enrolled_class" 
+                           value="{{ class_filter }}" placeholder="Class/Grade">
+                </div>
+                <div class="col-md-2">
+                    <label for="date_from" class="form-label">From Date</label>
+                    <input type="date" class="form-control" id="date_from" name="date_from" 
+                           value="{{ date_from }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="date_to" class="form-label">To Date</label>
+                    <input type="date" class="form-control" id="date_to" name="date_to" 
+                           value="{{ date_to }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="ordering" class="form-label">Sort By</label>
+                    <select class="form-select" id="ordering" name="ordering">
+                        {% for value, display in ordering_choices %}
+                            <option value="{{ value }}" {% if ordering == value %}selected{% endif %}>
+                                {{ display }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-9">
+                    <label class="form-label">&nbsp;</label>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search me-1"></i>Search
+                        </button>
+                        <a href="{% url 'dashboard:application_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-times me-1"></i>Clear
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Applications Table -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-list me-2"></i>Applications
+                {% if applications %}
+                    <span class="badge bg-secondary">{{ page_obj.paginator.count }} total</span>
+                {% endif %}
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if applications %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Student Name</th>
+                                <th>Class</th>
+                                <th>Guardian</th>
+                                <th>Contact</th>
+                                <th>Status</th>
+                                <th>Submitted</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for application in applications %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ application.student_name }}</strong>
+                                        {% if application.get_student_age %}
+                                            <br><small class="text-muted">Age: {{ application.get_student_age }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ application.enrolled_class }}</td>
+                                    <td>{{ application.guardian_name }}</td>
+                                    <td>
+                                        <small>
+                                            <i class="fas fa-phone me-1"></i>{{ application.get_formatted_mobile }}<br>
+                                            <i class="fas fa-envelope me-1"></i>{{ application.guardian_email }}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ application.get_status_display_color }}">
+                                            {{ application.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <small>
+                                            {{ application.date_submitted|date:"M d, Y" }}<br>
+                                            <span class="text-muted">
+                                                {% with days_ago=application.date_submitted|timesince %}
+                                                    {{ days_ago }} ago
+                                                {% endwith %}
+                                            </span>
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="{% url 'dashboard:application_detail' application.id %}" 
+                                               class="btn btn-outline-primary" title="View Details">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{% url 'dashboard:application_edit' application.id %}" 
+                                               class="btn btn-outline-warning" title="Edit">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'dashboard:application_delete' application.id %}" 
+                                               class="btn btn-outline-danger" title="Delete">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                {% if page_obj.has_other_pages %}
+                    <nav aria-label="Applications pagination" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}page=1">
+                                        <i class="fas fa-angle-double-left"></i>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}page={{ page_obj.previous_page_number }}">
+                                        <i class="fas fa-angle-left"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
+
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if page_obj.number == num %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ num }}</span>
+                                    </li>
+                                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}page={{ num }}">{{ num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}page={{ page_obj.next_page_number }}">
+                                        <i class="fas fa-angle-right"></i>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}page={{ page_obj.paginator.num_pages }}">
+                                        <i class="fas fa-angle-double-right"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+
+                    <div class="text-center text-muted">
+                        <small>
+                            Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} applications
+                        </small>
+                    </div>
+                {% endif %}
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No Applications Found</h5>
+                    <p class="text-muted">
+                        {% if search_query or status_filter != 'all' or class_filter or date_from or date_to %}
+                            No applications match your search criteria. Try adjusting your filters.
+                        {% else %}
+                            No admission applications have been submitted yet.
+                        {% endif %}
+                    </p>
+                    {% if search_query or status_filter != 'all' or class_filter or date_from or date_to %}
+                        <a href="{% url 'dashboard:application_list' %}" class="btn btn-primary">
+                            <i class="fas fa-times me-1"></i>Clear Filters
+                        </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-submit form on select change for better UX
+    document.getElementById('status').addEventListener('change', function() {
+        this.form.submit();
+    });
+    
+    document.getElementById('ordering').addEventListener('change', function() {
+        this.form.submit();
+    });
+</script>
+{% endblock %}

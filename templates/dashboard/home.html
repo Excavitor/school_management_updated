@@ -1,0 +1,461 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Dashboard Home - School Management System{% endblock %}
+
+{% block page_title %}Dashboard Overview{% endblock %}
+
+{% block page_actions %}
+    <div class="btn-group" role="group">
+        {% if user.role.permissions.can_add_notice %}
+            <a href="{% url 'dashboard:notice_create' %}" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus me-1"></i>New Notice
+            </a>
+        {% endif %}
+        {% if user.role.permissions.can_add_user %}
+            <a href="{% url 'dashboard:user_create' %}" class="btn btn-success btn-sm">
+                <i class="fas fa-user-plus me-1"></i>New User
+            </a>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block content %}
+    <!-- Welcome Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h4 class="card-title mb-1">
+                                <i class="fas fa-user-circle me-2"></i>
+                                Welcome back, {{ user.get_full_name|default:user.username }}!
+                            </h4>
+                            <p class="card-text mb-0">
+                                <span class="badge bg-light text-dark me-2">{{ user.role.name }}</span>
+                                You have access to {{ user.role.name|lower }} level features.
+                            </p>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-tachometer-alt fa-3x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <!-- Total Applications Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Applications
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ total_applications|default:0 }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-file-alt fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Notices Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Total Notices
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ total_notices|default:0 }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-bullhorn fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Users Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Total Users
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ user_statistics.total|default:0 }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pending Applications Card -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Pending Applications
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ application_status_breakdown.pending|default:0 }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clock fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- User Statistics Section -->
+        {% if user.role.permissions.can_view_user %}
+        <div class="col-xl-4 col-lg-5">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-users me-2"></i>User Statistics
+                    </h6>
+                    <a href="{% url 'dashboard:user_list' %}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-eye me-1"></i>View All
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if user_statistics %}
+                        <div class="row">
+                            {% for role_name, count in user_statistics.items %}
+                                {% if role_name != 'total' %}
+                                <div class="col-6 mb-3">
+                                    <div class="text-center">
+                                        <div class="h4 font-weight-bold text-gray-800">{{ count }}</div>
+                                        <div class="text-xs font-weight-bold text-gray-600 text-uppercase">
+                                            {{ role_name }}{% if count != 1 %}s{% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center text-muted">
+                            <i class="fas fa-users fa-3x mb-3"></i>
+                            <p>No user statistics available</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Recent Applications Section -->
+        {% if user.role.permissions.can_view_application %}
+        <div class="col-xl-8 col-lg-7">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-file-alt me-2"></i>Recent Applications
+                    </h6>
+                    <a href="{% url 'dashboard:application_list' %}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-eye me-1"></i>View All
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if recent_applications %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Student Name</th>
+                                        <th>Class</th>
+                                        <th>Guardian</th>
+                                        <th>Status</th>
+                                        <th>Submitted</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for application in recent_applications %}
+                                    <tr>
+                                        <td>
+                                            <div class="fw-bold">{{ application.student_name }}</div>
+                                            {% if application.student_age %}
+                                                <small class="text-muted">Age: {{ application.student_age }}</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info">{{ application.enrolled_class }}</span>
+                                        </td>
+                                        <td>
+                                            <div>{{ application.guardian_name }}</div>
+                                            <small class="text-muted">{{ application.guardian_mobile }}</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{{ application.status|yesno:'success,warning,danger' }}">
+                                                {{ application.status_display }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">
+                                                {{ application.date_submitted|date:"M d, Y" }}
+                                            </small>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <a href="{% url 'dashboard:application_detail' application.id %}" 
+                                                   class="btn btn-outline-primary btn-sm" title="View Details">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="{% url 'dashboard:application_edit' application.id %}" 
+                                                   class="btn btn-outline-secondary btn-sm" title="Edit">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-file-alt fa-3x mb-3"></i>
+                            <p>No recent applications found</p>
+                            <small>Applications will appear here once submitted</small>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Teacher-specific content -->
+        {% if user.role.name == 'Teacher' %}
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-chalkboard-teacher me-2"></i>Teacher Dashboard
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-center py-4">
+                        <i class="fas fa-chalkboard-teacher fa-4x text-muted mb-3"></i>
+                        <h5>Welcome, {{ user.get_full_name|default:user.username }}!</h5>
+                        <p class="text-muted">Teacher-specific features will be available here.</p>
+                        <div class="row mt-4">
+                            <div class="col-md-4">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-users fa-2x text-primary mb-2"></i>
+                                        <h6>My Classes</h6>
+                                        <p class="text-muted small">Manage your assigned classes</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-clipboard-list fa-2x text-success mb-2"></i>
+                                        <h6>Attendance</h6>
+                                        <p class="text-muted small">Track student attendance</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-chart-line fa-2x text-info mb-2"></i>
+                                        <h6>Grades</h6>
+                                        <p class="text-muted small">Manage student grades</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Guest user content -->
+        {% if not user.role %}
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-info-circle me-2"></i>Guest Dashboard
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-center py-4">
+                        <i class="fas fa-user fa-4x text-muted mb-3"></i>
+                        <h5>Welcome, {{ user.get_full_name|default:user.username }}!</h5>
+                        <p class="text-muted">You have guest access to the system.</p>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Limited Access:</strong> As a guest user, you have read-only access to public content. 
+                            Contact an administrator to upgrade your account permissions.
+                        </div>
+                        <div class="row mt-4">
+                            <div class="col-md-6">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-bullhorn fa-2x text-primary mb-2"></i>
+                                        <h6>View Notices</h6>
+                                        <p class="text-muted small">Read school announcements</p>
+                                        <a href="{% url 'public:notices' %}" class="btn btn-sm btn-primary">
+                                            View Notices
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-home fa-2x text-success mb-2"></i>
+                                        <h6>Public Portal</h6>
+                                        <p class="text-muted small">Visit the public website</p>
+                                        <a href="{% url 'public:home' %}" class="btn btn-sm btn-success">
+                                            Go to Public Site
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    
+    <!-- Application Status Breakdown -->
+    {% if user.role.permissions.can_view_application %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-chart-pie me-2"></i>Application Status Overview
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <div class="h3 font-weight-bold text-warning">
+                                    {{ application_status_breakdown.pending|default:0 }}
+                                </div>
+                                <div class="text-xs font-weight-bold text-warning text-uppercase">
+                                    Pending Applications
+                                </div>
+                                <div class="progress mt-2">
+                                    <div class="progress-bar bg-warning" role="progressbar" 
+                                         style="width: {% widthratio application_status_breakdown.pending total_applications 100 %}%">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <div class="h3 font-weight-bold text-success">
+                                    {{ application_status_breakdown.accepted|default:0 }}
+                                </div>
+                                <div class="text-xs font-weight-bold text-success text-uppercase">
+                                    Accepted Applications
+                                </div>
+                                <div class="progress mt-2">
+                                    <div class="progress-bar bg-success" role="progressbar" 
+                                         style="width: {% widthratio application_status_breakdown.accepted total_applications 100 %}%">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <div class="h3 font-weight-bold text-danger">
+                                    {{ application_status_breakdown.rejected|default:0 }}
+                                </div>
+                                <div class="text-xs font-weight-bold text-danger text-uppercase">
+                                    Rejected Applications
+                                </div>
+                                <div class="progress mt-2">
+                                    <div class="progress-bar bg-danger" role="progressbar" 
+                                         style="width: {% widthratio application_status_breakdown.rejected total_applications 100 %}%">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .border-left-primary {
+        border-left: 0.25rem solid #4e73df !important;
+    }
+    .border-left-success {
+        border-left: 0.25rem solid #1cc88a !important;
+    }
+    .border-left-info {
+        border-left: 0.25rem solid #36b9cc !important;
+    }
+    .border-left-warning {
+        border-left: 0.25rem solid #f6c23e !important;
+    }
+    .text-gray-300 {
+        color: #dddfeb !important;
+    }
+    .text-gray-600 {
+        color: #858796 !important;
+    }
+    .text-gray-800 {
+        color: #5a5c69 !important;
+    }
+    .shadow {
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15) !important;
+    }
+    .card {
+        transition: all 0.3s;
+    }
+    .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0.25rem 2rem 0 rgba(58, 59, 69, 0.2) !important;
+    }
+    .progress {
+        height: 0.5rem;
+    }
+</style>
+{% endblock %}

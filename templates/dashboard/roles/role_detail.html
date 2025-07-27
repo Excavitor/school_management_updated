@@ -1,0 +1,313 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+{% load dashboard_extras %}
+
+{% block title %}Role Details: {{ role.name }} - Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .role-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+    }
+    .role-stats {
+        display: flex;
+        gap: 2rem;
+        margin-top: 1rem;
+    }
+    .stat-item {
+        text-align: center;
+    }
+    .stat-number {
+        font-size: 2rem;
+        font-weight: bold;
+        display: block;
+    }
+    .stat-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+    .permission-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    .permission-item {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem;
+        background: #f8f9fa;
+        border-radius: 6px;
+        border-left: 4px solid #28a745;
+    }
+    .permission-item.disabled {
+        border-left-color: #dc3545;
+        background: #fff5f5;
+    }
+    .permission-icon {
+        margin-right: 0.75rem;
+        width: 20px;
+        text-align: center;
+    }
+    .system-role-badge {
+        background-color: rgba(255, 255, 255, 0.2);
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        margin-left: 1rem;
+    }
+    .user-card {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        background: white;
+    }
+    .user-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #6c757d;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        margin-right: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Role Header -->
+            <div class="role-header">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h1 class="mb-2">
+                            {{ role.name }}
+                            {% if role.name in 'SuperAdmin,Admin,Teacher' %}
+                                <span class="system-role-badge">System Role</span>
+                            {% endif %}
+                        </h1>
+                        {% if role.description %}
+                            <p class="mb-0 opacity-75">{{ role.description }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="text-end">
+                        <a href="{% url 'dashboard:role_edit' role.pk %}" class="btn btn-light me-2">
+                            <i class="fas fa-edit"></i> Edit Role
+                        </a>
+                        <a href="{% url 'dashboard:role_list' %}" class="btn btn-outline-light">
+                            <i class="fas fa-arrow-left"></i> Back to Roles
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="role-stats">
+                    <div class="stat-item">
+                        <span class="stat-number">{{ user_count }}</span>
+                        <span class="stat-label">User{{ user_count|pluralize }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">
+                            {% if role.permissions %}
+                                {{ role.permissions|length }}
+                            {% else %}
+                                0
+                            {% endif %}
+                        </span>
+                        <span class="stat-label">Permission{{ role.permissions|length|pluralize }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">{{ role.created_at|date:"M d" }}</span>
+                        <span class="stat-label">Created</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Permissions Section -->
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-key me-2"></i>Permissions
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if role.permissions %}
+                                <div class="permission-grid">
+                                    {% for perm_key, perm_value in role.permissions.items %}
+                                        <div class="permission-item {% if not perm_value %}disabled{% endif %}">
+                                            <div class="permission-icon">
+                                                {% if perm_value %}
+                                                    <i class="fas fa-check text-success"></i>
+                                                {% else %}
+                                                    <i class="fas fa-times text-danger"></i>
+                                                {% endif %}
+                                            </div>
+                                            <div>
+                                                <strong>{{ perm_key|format_permission_name }}</strong>
+                                                <div class="text-muted small">
+                                                    {% if perm_value %}Enabled{% else %}Disabled{% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="text-center py-4">
+                                    <i class="fas fa-key fa-3x text-muted mb-3"></i>
+                                    <h6 class="text-muted">No permissions configured</h6>
+                                    <p class="text-muted">This role has no specific permissions assigned.</p>
+                                    <a href="{% url 'dashboard:role_edit' role.pk %}" class="btn btn-primary">
+                                        <i class="fas fa-edit"></i> Configure Permissions
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Role Information -->
+                <div class="col-lg-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-info-circle me-2"></i>Role Information
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <dl class="row">
+                                <dt class="col-sm-5">Name:</dt>
+                                <dd class="col-sm-7">{{ role.name }}</dd>
+                                
+                                <dt class="col-sm-5">Type:</dt>
+                                <dd class="col-sm-7">
+                                    {% if role.name in 'SuperAdmin,Admin,Teacher' %}
+                                        <span class="badge bg-info">System Role</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Custom Role</span>
+                                    {% endif %}
+                                </dd>
+                                
+                                <dt class="col-sm-5">Users:</dt>
+                                <dd class="col-sm-7">{{ user_count }}</dd>
+                                
+                                <dt class="col-sm-5">Created:</dt>
+                                <dd class="col-sm-7">{{ role.created_at|date:"M d, Y H:i" }}</dd>
+                                
+                                <dt class="col-sm-5">Updated:</dt>
+                                <dd class="col-sm-7">{{ role.updated_at|date:"M d, Y H:i" }}</dd>
+                            </dl>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-bolt me-2"></i>Quick Actions
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <a href="{% url 'dashboard:role_edit' role.pk %}" class="btn btn-primary">
+                                    <i class="fas fa-edit"></i> Edit Role
+                                </a>
+                                <a href="{% url 'dashboard:user_list' %}?role={{ role.name }}" class="btn btn-outline-primary">
+                                    <i class="fas fa-users"></i> View Users
+                                </a>
+                                {% if role.name not in 'SuperAdmin,Admin,Teacher' and user_count == 0 %}
+                                    <a href="{% url 'dashboard:role_delete' role.pk %}" class="btn btn-outline-danger">
+                                        <i class="fas fa-trash"></i> Delete Role
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Users with this Role -->
+            {% if users %}
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-users me-2"></i>Users with this Role ({{ user_count }})
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            {% for user in users %}
+                                <div class="col-md-6 col-lg-4">
+                                    <div class="user-card">
+                                        <div class="d-flex align-items-center">
+                                            <div class="user-avatar">
+                                                {{ user.username|first|upper }}
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-1">
+                                                    {{ user.get_full_name|default:user.username }}
+                                                </h6>
+                                                <div class="text-muted small">
+                                                    {{ user.email }}
+                                                </div>
+                                                <div class="text-muted small">
+                                                    {% if user.is_active %}
+                                                        <span class="badge bg-success">Active</span>
+                                                    {% else %}
+                                                        <span class="badge bg-secondary">Inactive</span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Pagination for users -->
+                        {% if users.has_other_pages %}
+                            <nav aria-label="Users pagination" class="mt-3">
+                                <ul class="pagination justify-content-center">
+                                    {% if users.has_previous %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ users.previous_page_number }}">Previous</a>
+                                        </li>
+                                    {% endif %}
+
+                                    {% for num in users.paginator.page_range %}
+                                        {% if users.number == num %}
+                                            <li class="page-item active">
+                                                <span class="page-link">{{ num }}</span>
+                                            </li>
+                                        {% elif num > users.number|add:'-3' and num < users.number|add:'3' %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                                            </li>
+                                        {% endif %}
+                                    {% endfor %}
+
+                                    {% if users.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ users.next_page_number }}">Next</a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,432 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block title %}User Management - Dashboard{% endblock %}
+
+{% block page_title %}User Management{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'dashboard:user_create' %}" class="btn btn-primary">
+    <i class="fas fa-user-plus me-2"></i>Create New User
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Search and Filter Form -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-search me-2"></i>Search & Filter Users
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-3">
+                        <label for="search" class="form-label">Search</label>
+                        <input type="text" class="form-control" id="search" name="search" 
+                               value="{{ search_query }}" placeholder="Search by name, username, email, phone...">
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <label for="role" class="form-label">Role</label>
+                        <select class="form-select" id="role" name="role">
+                            <option value="">All Roles</option>
+                            {% for role in roles %}
+                                <option value="{{ role.name }}" {% if role_filter == role.name %}selected{% endif %}>
+                                    {{ role.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <label for="is_active" class="form-label">Status</label>
+                        <select class="form-select" id="is_active" name="is_active">
+                            <option value="all" {% if is_active_filter == 'all' %}selected{% endif %}>All</option>
+                            <option value="true" {% if is_active_filter == 'true' %}selected{% endif %}>Active</option>
+                            <option value="false" {% if is_active_filter == 'false' %}selected{% endif %}>Inactive</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <label for="date_from" class="form-label">From Date</label>
+                        <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from }}">
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <label for="date_to" class="form-label">To Date</label>
+                        <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to }}">
+                    </div>
+                    
+                    <div class="col-md-1">
+                        <label for="ordering" class="form-label">Sort By</label>
+                        <select class="form-select" id="ordering" name="ordering">
+                            <option value="-date_joined" {% if ordering == '-date_joined' %}selected{% endif %}>Newest</option>
+                            <option value="date_joined" {% if ordering == 'date_joined' %}selected{% endif %}>Oldest</option>
+                            <option value="username" {% if ordering == 'username' %}selected{% endif %}>Username A-Z</option>
+                            <option value="-username" {% if ordering == '-username' %}selected{% endif %}>Username Z-A</option>
+                            <option value="first_name" {% if ordering == 'first_name' %}selected{% endif %}>Name A-Z</option>
+                            <option value="-first_name" {% if ordering == '-first_name' %}selected{% endif %}>Name Z-A</option>
+                            <option value="-last_login" {% if ordering == '-last_login' %}selected{% endif %}>Last Login</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search me-2"></i>Search
+                        </button>
+                        <a href="{% url 'dashboard:user_list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>Clear
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Users List -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-users me-2"></i>System Users 
+                    {% if users %}
+                        <span class="badge bg-secondary">{{ users.paginator.count }}</span>
+                    {% endif %}
+                </h5>
+                
+                {% if search_query or role_filter or is_active_filter != 'all' or date_from or date_to %}
+                    <small class="text-muted">
+                        <i class="fas fa-filter me-1"></i>Filtered results
+                    </small>
+                {% endif %}
+            </div>
+            
+            
+            <div class="card-body">
+                {% if users %}
+                    <!-- Users Table -->
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>User</th>
+                                    <th>Contact</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Joined</th>
+                                    <th>Last Login</th>
+                                    <th width="200">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user_obj in users %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-circle me-3">
+                                                <i class="fas fa-user"></i>
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold">
+                                                    {{ user_obj.get_full_name|default:user_obj.username }}
+                                                    {% if user_obj.id == user.id %}
+                                                        <span class="badge bg-info ms-1">You</span>
+                                                    {% endif %}
+                                                </div>
+                                                <small class="text-muted">@{{ user_obj.username }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <i class="fas fa-envelope me-1 text-muted"></i>
+                                            <small>{{ user_obj.email }}</small>
+                                        </div>
+                                        <div>
+                                            <i class="fas fa-phone me-1 text-muted"></i>
+                                            <small>{{ user_obj.phone_number }}</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{% if user_obj.role.name == 'SuperAdmin' %}danger{% elif user_obj.role.name == 'Admin' %}warning{% elif user_obj.role.name == 'Teacher' %}info{% else %}secondary{% endif %}">
+                                            {{ user_obj.role.name }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if user_obj.is_active %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-check-circle me-1"></i>Active
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-danger">
+                                                <i class="fas fa-times-circle me-1"></i>Inactive
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div>{{ user_obj.date_joined|date:"M d, Y" }}</div>
+                                        <small class="text-muted">{{ user_obj.date_joined|time:"g:i A" }}</small>
+                                    </td>
+                                    <td>
+                                        {% if user_obj.last_login %}
+                                            <div>{{ user_obj.last_login|date:"M d, Y" }}</div>
+                                            <small class="text-muted">{{ user_obj.last_login|time:"g:i A" }}</small>
+                                        {% else %}
+                                            <span class="text-muted">Never</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'dashboard:user_edit' user_obj.id %}" 
+                                               class="btn btn-outline-primary btn-sm" title="Edit User"
+                                               {% if user_obj.id == user.id %}onclick="return confirm('Are you sure you want to edit your own account? Some changes may require you to log in again.')"{% endif %}>
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            
+                                            {% if user_obj.id != user.id %}
+                                                <button type="button" class="btn btn-outline-warning btn-sm" 
+                                                        onclick="toggleUserStatus({{ user_obj.id }}, {{ user_obj.is_active|yesno:'true,false' }}, '{{ user_obj.username|escapejs }}')"
+                                                        title="{% if user_obj.is_active %}Deactivate{% else %}Activate{% endif %} User">
+                                                    {% if user_obj.is_active %}
+                                                        <i class="fas fa-user-slash"></i>
+                                                    {% else %}
+                                                        <i class="fas fa-user-check"></i>
+                                                    {% endif %}
+                                                </button>
+                                                
+                                                <button type="button" class="btn btn-outline-danger btn-sm" 
+                                                        onclick="deleteUser({{ user_obj.id }}, '{{ user_obj.username|escapejs }}')"
+                                                        title="Delete User">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            {% else %}
+                                                <span class="btn btn-outline-secondary btn-sm disabled" title="Cannot modify own account">
+                                                    <i class="fas fa-lock"></i>
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    {% if users.has_other_pages %}
+                        <nav aria-label="User pagination" class="mt-4">
+                            <ul class="pagination justify-content-center">
+                                {% if users.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?{{ query_string }}&page={{ users.previous_page_number }}">
+                                            <i class="fas fa-chevron-left"></i> Previous
+                                        </a>
+                                    </li>
+                                {% endif %}
+
+                                {% for num in users.paginator.page_range %}
+                                    {% if users.number == num %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ num }}</span>
+                                        </li>
+                                    {% elif num > users.number|add:'-3' and num < users.number|add:'3' %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?{{ query_string }}&page={{ num }}">{{ num }}</a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+
+                                {% if users.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?{{ query_string }}&page={{ users.next_page_number }}">
+                                            Next <i class="fas fa-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+
+                        <div class="text-center text-muted">
+                            <small>
+                                Showing {{ users.start_index }} to {{ users.end_index }} of {{ users.paginator.count }} users
+                            </small>
+                        </div>
+                    {% endif %}
+
+                {% else %}
+                    <!-- No Users Found -->
+                    <div class="text-center py-5">
+                        <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No users found</h5>
+                        {% if search_query or role_filter or is_active_filter != 'all' or date_from or date_to %}
+                            <p class="text-muted">Try adjusting your search criteria or <a href="{% url 'dashboard:user_list' %}">clear all filters</a>.</p>
+                        {% else %}
+                            <p class="text-muted">Get started by creating your first user.</p>
+                            <a href="{% url 'dashboard:user_create' %}" class="btn btn-primary">
+                                <i class="fas fa-user-plus me-2"></i>Create First User
+                            </a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal fade" id="confirmModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmModalTitle">Confirm Action</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="confirmModalBody">
+                Are you sure you want to perform this action?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmModalAction">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.avatar-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #6c757d;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 16px;
+}
+</style>
+
+<script>
+// Get CSRF token
+function getCsrfToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+           document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+}
+
+// Toggle user active status
+function toggleUserStatus(userId, currentStatus, username) {
+    const action = currentStatus ? 'deactivate' : 'activate';
+    const actionText = currentStatus ? 'Deactivate' : 'Activate';
+    
+    showConfirmModal(
+        `${actionText} User`,
+        `Are you sure you want to ${action} user "${username}"?`,
+        actionText,
+        currentStatus ? 'btn-warning' : 'btn-success',
+        async () => {
+            try {
+                const response = await fetch(`/dashboard/api/users/${userId}/`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken()
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                        is_active: !currentStatus
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showAlert('success', data.message || `User ${action}d successfully`);
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showAlert('error', data.error || `Failed to ${action} user`);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('error', `An error occurred while ${action}ing the user`);
+            }
+        }
+    );
+}
+
+// Delete user
+function deleteUser(userId, username) {
+    showConfirmModal(
+        'Delete User',
+        `Are you sure you want to delete user "${username}"? This action cannot be undone and will permanently remove all user data.`,
+        'Delete',
+        'btn-danger',
+        async () => {
+            try {
+                const response = await fetch(`/dashboard/api/users/${userId}/`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': getCsrfToken()
+                    },
+                    credentials: 'same-origin'
+                });
+                
+                if (response.ok) {
+                    showAlert('success', 'User deleted successfully');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    const data = await response.json();
+                    showAlert('error', data.error || 'Failed to delete user');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('error', 'An error occurred while deleting the user');
+            }
+        }
+    );
+}
+
+// Show confirmation modal
+function showConfirmModal(title, body, actionText, actionClass, callback) {
+    document.getElementById('confirmModalTitle').textContent = title;
+    document.getElementById('confirmModalBody').textContent = body;
+    
+    const actionButton = document.getElementById('confirmModalAction');
+    actionButton.textContent = actionText;
+    actionButton.className = `btn ${actionClass}`;
+    
+    // Remove existing event listeners
+    const newActionButton = actionButton.cloneNode(true);
+    actionButton.parentNode.replaceChild(newActionButton, actionButton);
+    
+    // Add new event listener
+    newActionButton.addEventListener('click', () => {
+        callback();
+        bootstrap.Modal.getInstance(document.getElementById('confirmModal')).hide();
+    });
+    
+    new bootstrap.Modal(document.getElementById('confirmModal')).show();
+}
+
+// Show alert messages
+function showAlert(type, message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    // Insert at the top of the main content
+    const mainContent = document.querySelector('main');
+    mainContent.insertBefore(alertDiv, mainContent.firstChild);
+    
+    // Auto-hide after 5 seconds
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+</script>
+{% endblock %}

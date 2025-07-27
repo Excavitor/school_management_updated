@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Dashboard - School Management System{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="bg-light">
+    <!-- Top Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{% url 'dashboard:home' %}">
+                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'public:home' %}">
+                            <i class="fas fa-home me-1"></i>Public Site
+                        </a>
+                    </li>
+                </ul>
+                
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user me-1"></i>{{ user.get_full_name|default:user.username }}
+                            <span class="badge bg-secondary ms-1">{{ user.role.name }}</span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'dashboard:profile' %}">
+                                <i class="fas fa-user-edit me-2"></i>Profile
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'public:logout' %}">
+                                <i class="fas fa-sign-out-alt me-2"></i>Logout
+                            </a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar Navigation -->
+            <nav class="col-md-3 col-lg-2 d-md-block bg-white sidebar collapse">
+                <div class="position-sticky pt-3">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" 
+                               href="{% url 'dashboard:home' %}">
+                                <i class="fas fa-home me-2"></i>Dashboard Home
+                            </a>
+                        </li>
+                        
+                        <!-- Notice Management -->
+                        {% if user.role.permissions.can_view_notice %}
+                            <li class="nav-item">
+                                <a class="nav-link {% if 'notice' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'dashboard:notice_list' %}">
+                                    <i class="fas fa-bullhorn me-2"></i>Notice Management
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+                        <!-- Application Management -->
+                        {% if user.role.permissions.can_view_application %}
+                            <li class="nav-item">
+                                <a class="nav-link {% if 'application' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'dashboard:application_list' %}">
+                                    <i class="fas fa-file-alt me-2"></i>Applications
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+                        <!-- User Management -->
+                        {% if user.role.permissions.can_view_user %}
+                            <li class="nav-item">
+                                <a class="nav-link {% if 'user' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'dashboard:user_list' %}">
+                                    <i class="fas fa-users me-2"></i>User Management
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+                        <!-- Role Management -->
+                        {% if user.role.permissions.can_view_role %}
+                            <li class="nav-item">
+                                <a class="nav-link {% if 'role' in request.resolver_match.url_name %}active{% endif %}" 
+                                   href="{% url 'dashboard:role_list' %}">
+                                    <i class="fas fa-user-shield me-2"></i>Role Management
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+                        <!-- Teacher specific items -->
+                        {% if user.role.name == 'Teacher' %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="#">
+                                    <i class="fas fa-chalkboard-teacher me-2"></i>My Classes
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                    
+                    <hr>
+                    
+                    <!-- Quick Actions -->
+                    <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                        <span>Quick Actions</span>
+                    </h6>
+                    <ul class="nav flex-column mb-2">
+                        {% if user.role.permissions.can_add_notice %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'dashboard:notice_create' %}">
+                                    <i class="fas fa-plus me-2"></i>New Notice
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+                        {% if user.role.permissions.can_add_user %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'dashboard:user_create' %}">
+                                    <i class="fas fa-user-plus me-2"></i>New User
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+                        {% if user.role.permissions.can_add_role %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'dashboard:role_create' %}">
+                                    <i class="fas fa-shield-alt me-2"></i>New Role
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </nav>
+
+            
+            <!-- Main Content Area -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <!-- Messages Display System -->
+                {% if messages %}
+                    <div class="mt-3">
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                                {% if message.tags == 'error' %}
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                {% elif message.tags == 'success' %}
+                                    <i class="fas fa-check-circle me-2"></i>
+                                {% elif message.tags == 'warning' %}
+                                    <i class="fas fa-exclamation-circle me-2"></i>
+                                {% else %}
+                                    <i class="fas fa-info-circle me-2"></i>
+                                {% endif %}
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <!-- Page Header -->
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">{% block page_title %}Dashboard{% endblock %}</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        {% block page_actions %}{% endblock %}
+                    </div>
+                </div>
+
+                <!-- Main Content -->
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Font Awesome -->
+    <script src="https://kit.fontawesome.com/your-fontawesome-kit.js" crossorigin="anonymous"></script>
+    
+    <!-- Custom Dashboard JS -->
+    <script>
+        // Auto-hide alerts after 5 seconds
+        setTimeout(function() {
+            var alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function(alert) {
+                var bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            });
+        }, 5000);
+        
+        // Highlight active sidebar links
+        document.addEventListener('DOMContentLoaded', function() {
+            var currentPath = window.location.pathname;
+            var sidebarLinks = document.querySelectorAll('.sidebar .nav-link');
+            
+            sidebarLinks.forEach(function(link) {
+                if (link.getAttribute('href') === currentPath) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

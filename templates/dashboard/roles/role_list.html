@@ -1,0 +1,192 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Role Management - Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .role-card {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        background: white;
+    }
+    .role-header {
+        display: flex;
+        justify-content: between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+    .role-name {
+        font-weight: 600;
+        color: #495057;
+    }
+    .system-role-badge {
+        background-color: #17a2b8;
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+    }
+    .user-count-badge {
+        background-color: #6c757d;
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+    }
+    .permissions-info {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>Role Management</h2>
+                <a href="{% url 'dashboard:role_create' %}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Create New Role
+                </a>
+            </div>
+
+            <!-- Search and Filter Form -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-6">
+                            <label for="search" class="form-label">Search Roles</label>
+                            <input type="text" class="form-control" id="search" name="search" 
+                                   value="{{ search_query }}" placeholder="Search by name or description...">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="ordering" class="form-label">Sort By</label>
+                            <select class="form-select" id="ordering" name="ordering">
+                                <option value="name" {% if ordering == 'name' %}selected{% endif %}>Name A-Z</option>
+                                <option value="-name" {% if ordering == '-name' %}selected{% endif %}>Name Z-A</option>
+                                <option value="created_at" {% if ordering == 'created_at' %}selected{% endif %}>Oldest First</option>
+                                <option value="-created_at" {% if ordering == '-created_at' %}selected{% endif %}>Newest First</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-outline-primary me-2">
+                                <i class="fas fa-search"></i> Search
+                            </button>
+                            <a href="{% url 'dashboard:role_list' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i> Clear
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Roles List -->
+            <div class="card">
+                <div class="card-body">
+                    {% if roles %}
+                        <div class="row">
+                            {% for role in roles %}
+                            <div class="col-md-6 col-lg-4">
+                                <div class="role-card">
+                                    <div class="role-header">
+                                        <div class="role-name">{{ role.name }}</div>
+                                        <div>
+                                            {% if role.name in 'SuperAdmin,Admin,Teacher' %}
+                                                <span class="system-role-badge">System</span>
+                                            {% endif %}
+                                            <span class="user-count-badge">{{ role.user_count }} users</span>
+                                        </div>
+                                    </div>
+                                    
+                                    {% if role.description %}
+                                        <p class="text-muted mb-2">{{ role.description|truncatechars:100 }}</p>
+                                    {% endif %}
+                                    
+                                    <div class="permissions-info mb-3">
+                                        {% if role.permissions %}
+                                            {% with permission_count=role.permissions.values|length %}
+                                                {{ permission_count }} permission{{ permission_count|pluralize }}
+                                            {% endwith %}
+                                        {% else %}
+                                            No permissions
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="d-flex gap-2">
+                                        <a href="{% url 'dashboard:role_detail' role.pk %}" 
+                                           class="btn btn-sm btn-outline-info">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>
+                                        <a href="{% url 'dashboard:role_edit' role.pk %}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </a>
+                                        {% if role.name not in 'SuperAdmin,Admin,Teacher' and role.user_count == 0 %}
+                                            <a href="{% url 'dashboard:role_delete' role.pk %}" 
+                                               class="btn btn-sm btn-outline-danger">
+                                                <i class="fas fa-trash"></i> Delete
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Pagination -->
+                        {% if roles.has_other_pages %}
+                            <nav aria-label="Role pagination" class="mt-4">
+                                <ul class="pagination justify-content-center">
+                                    {% if roles.has_previous %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ roles.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if ordering %}&ordering={{ ordering }}{% endif %}">Previous</a>
+                                        </li>
+                                    {% endif %}
+
+                                    {% for num in roles.paginator.page_range %}
+                                        {% if roles.number == num %}
+                                            <li class="page-item active">
+                                                <span class="page-link">{{ num }}</span>
+                                            </li>
+                                        {% elif num > roles.number|add:'-3' and num < roles.number|add:'3' %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if ordering %}&ordering={{ ordering }}{% endif %}">{{ num }}</a>
+                                            </li>
+                                        {% endif %}
+                                    {% endfor %}
+
+                                    {% if roles.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ roles.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if ordering %}&ordering={{ ordering }}{% endif %}">Next</a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-user-shield fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No roles found</h5>
+                            {% if search_query %}
+                                <p class="text-muted">Try adjusting your search criteria.</p>
+                                <a href="{% url 'dashboard:role_list' %}" class="btn btn-outline-primary">
+                                    <i class="fas fa-times"></i> Clear Search
+                                </a>
+                            {% else %}
+                                <p class="text-muted">Create your first role to get started.</p>
+                                <a href="{% url 'dashboard:role_create' %}" class="btn btn-primary">
+                                    <i class="fas fa-plus"></i> Create Role
+                                </a>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

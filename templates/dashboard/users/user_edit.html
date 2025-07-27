@@ -1,0 +1,365 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Edit User - Dashboard{% endblock %}
+
+{% block page_title %}Edit User: {{ user_obj.username }}{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'dashboard:user_list' %}" class="btn btn-outline-secondary">
+    <i class="fas fa-arrow-left me-2"></i>Back to Users
+</a>
+
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <!-- User Info Card -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-user-edit me-2"></i>Edit User Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- User Summary -->
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <div class="d-flex align-items-center p-3 bg-light rounded">
+                            <div class="avatar-circle me-3">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">{{ user_obj.get_full_name|default:user_obj.username }}</h6>
+                                <p class="mb-1 text-muted">@{{ user_obj.username }}</p>
+                                <div>
+                                    <span class="badge bg-{% if user_obj.role.name == 'SuperAdmin' %}danger{% elif user_obj.role.name == 'Admin' %}warning{% elif user_obj.role.name == 'Teacher' %}info{% else %}secondary{% endif %} me-2">
+                                        {{ user_obj.role.name }}
+                                    </span>
+                                    {% if user_obj.is_active %}
+                                        <span class="badge bg-success">Active</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Inactive</span>
+                                    {% endif %}
+                                    {% if user_obj.id == user.id %}
+                                        <span class="badge bg-info">Your Account</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <!-- Username (Read-only) -->
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        <input type="text" class="form-control" id="username" value="{{ user_obj.username }}" readonly>
+                        <div class="form-text">Username cannot be changed after account creation.</div>
+                    </div>
+                    
+                    <div class="row">
+                        <!-- Email -->
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">Email Address <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control {% if errors.email %}is-invalid{% endif %}" 
+                                   id="email" name="email" value="{{ form_data.email|default:user_obj.email }}" 
+                                   placeholder="Enter email address" required>
+                            {% if errors.email %}
+                                <div class="invalid-feedback">{{ errors.email }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Phone Number -->
+                        <div class="col-md-6 mb-3">
+                            <label for="phone_number" class="form-label">Phone Number <span class="text-danger">*</span></label>
+                            <input type="tel" class="form-control {% if errors.phone_number %}is-invalid{% endif %}" 
+                                   id="phone_number" name="phone_number" 
+                                   value="{{ form_data.phone_number|default:user_obj.phone_number }}" 
+                                   placeholder="01XXXXXXXXX" pattern="01[0-9]{9}" required>
+                            {% if errors.phone_number %}
+                                <div class="invalid-feedback">{{ errors.phone_number }}</div>
+                            {% endif %}
+                            <div class="form-text">Bangladeshi phone number format: 01XXXXXXXXX (11 digits)</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <!-- First Name -->
+                        <div class="col-md-6 mb-3">
+                            <label for="first_name" class="form-label">First Name</label>
+                            <input type="text" class="form-control" id="first_name" name="first_name" 
+                                   value="{{ form_data.first_name|default:user_obj.first_name }}" 
+                                   placeholder="Enter first name">
+                        </div>
+                        
+                        <!-- Last Name -->
+                        <div class="col-md-6 mb-3">
+                            <label for="last_name" class="form-label">Last Name</label>
+                            <input type="text" class="form-control" id="last_name" name="last_name" 
+                                   value="{{ form_data.last_name|default:user_obj.last_name }}" 
+                                   placeholder="Enter last name">
+                        </div>
+                    </div>
+                    
+                    <!-- Role -->
+                    <div class="mb-3">
+                        <label for="role_id" class="form-label">Role <span class="text-danger">*</span></label>
+                        <select class="form-select {% if errors.role_id %}is-invalid{% endif %}" 
+                                id="role_id" name="role_id" required
+                                {% if user_obj.id == user.id %}onchange="warnRoleChange()"{% endif %}>
+                            {% for role in roles %}
+                                <option value="{{ role.id }}" 
+                                        {% if form_data.role_id == role.id|stringformat:"s" or user_obj.role.id == role.id %}selected{% endif %}>
+                                    {{ role.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        {% if errors.role_id %}
+                            <div class="invalid-feedback">{{ errors.role_id }}</div>
+                        {% endif %}
+                        {% if user_obj.id == user.id %}
+                            <div class="form-text text-warning">
+                                <i class="fas fa-exclamation-triangle me-1"></i>
+                                Changing your own role may affect your access permissions.
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Account Status -->
+                    {% if user_obj.id != user.id %}
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="is_active" name="is_active" 
+                                       {% if form_data.is_active == 'on' or user_obj.is_active and not form_data %}checked{% endif %}>
+                                <label class="form-check-label" for="is_active">
+                                    <strong>Active Account</strong>
+                                </label>
+                                <div class="form-text">Uncheck to deactivate this account and prevent login.</div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <input type="hidden" name="is_active" value="on">
+                        <div class="mb-3">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                You cannot deactivate your own account. Contact another SuperAdmin if needed.
+                            </div>
+                        </div>
+                    {% endif %}
+                    
+                    <hr>
+                    
+                    <!-- Password Change Section -->
+                    <h6 class="mb-3">
+                        <i class="fas fa-key me-2"></i>Change Password (Optional)
+                    </h6>
+                    
+                    <div class="row">
+                        <!-- New Password -->
+                        <div class="col-md-6 mb-3">
+                            <label for="password" class="form-label">New Password</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control {% if errors.password %}is-invalid{% endif %}" 
+                                       id="password" name="password" placeholder="Leave blank to keep current password">
+                                <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            {% if errors.password %}
+                                <div class="invalid-feedback">{{ errors.password }}</div>
+                            {% endif %}
+                            <div class="form-text">Password must be at least 8 characters long.</div>
+                        </div>
+                        
+                        <!-- Confirm Password -->
+                        <div class="col-md-6 mb-3">
+                            <label for="password_confirm" class="form-label">Confirm New Password</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control {% if errors.password_confirm %}is-invalid{% endif %}" 
+                                       id="password_confirm" name="password_confirm" placeholder="Confirm new password">
+                                <button class="btn btn-outline-secondary" type="button" id="togglePasswordConfirm">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            {% if errors.password_confirm %}
+                                <div class="invalid-feedback">{{ errors.password_confirm }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <!-- Form Actions -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'dashboard:user_list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Update User
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- User Activity Card -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-clock me-2"></i>Account Activity
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>Account Created:</strong><br>
+                        <span class="text-muted">{{ user_obj.date_joined|date:"F d, Y \a\t g:i A" }}</span>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Last Login:</strong><br>
+                        {% if user_obj.last_login %}
+                            <span class="text-muted">{{ user_obj.last_login|date:"F d, Y \a\t g:i A" }}</span>
+                        {% else %}
+                            <span class="text-muted">Never logged in</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.avatar-circle {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: #6c757d;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 20px;
+}
+</style>
+
+<script>
+// Toggle password visibility
+document.getElementById('togglePassword').addEventListener('click', function() {
+    const passwordField = document.getElementById('password');
+    const icon = this.querySelector('i');
+    
+    if (passwordField.type === 'password') {
+        passwordField.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        passwordField.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+});
+
+document.getElementById('togglePasswordConfirm').addEventListener('click', function() {
+    const passwordField = document.getElementById('password_confirm');
+    const icon = this.querySelector('i');
+    
+    if (passwordField.type === 'password') {
+        passwordField.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        passwordField.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+});
+
+// Phone number formatting
+document.getElementById('phone_number').addEventListener('input', function() {
+    let value = this.value.replace(/\D/g, ''); // Remove non-digits
+    
+    // Ensure it starts with 01
+    if (value.length > 0 && !value.startsWith('01')) {
+        if (value.startsWith('1')) {
+            value = '0' + value;
+        } else if (!value.startsWith('0')) {
+            value = '01' + value;
+        }
+    }
+    
+    // Limit to 11 digits
+    if (value.length > 11) {
+        value = value.substring(0, 11);
+    }
+    
+    this.value = value;
+});
+
+// Password confirmation validation
+document.getElementById('password_confirm').addEventListener('input', function() {
+    const password = document.getElementById('password').value;
+    const confirmPassword = this.value;
+    
+    if (confirmPassword && password !== confirmPassword) {
+        this.classList.add('is-invalid');
+        this.setCustomValidity('Passwords do not match');
+    } else {
+        this.classList.remove('is-invalid');
+        this.setCustomValidity('');
+    }
+});
+
+document.getElementById('password').addEventListener('input', function() {
+    const confirmPassword = document.getElementById('password_confirm');
+    if (confirmPassword.value) {
+        confirmPassword.dispatchEvent(new Event('input'));
+    }
+});
+
+// Warn about role change for own account
+function warnRoleChange() {
+    {% if user_obj.id == user.id %}
+        const currentRole = '{{ user_obj.role.name }}';
+        const selectedRole = document.getElementById('role_id').selectedOptions[0].text;
+        
+        if (currentRole !== selectedRole) {
+            if (!confirm(`Are you sure you want to change your role from ${currentRole} to ${selectedRole}? This may affect your access permissions and you may need to log in again.`)) {
+                // Reset to original role
+                document.getElementById('role_id').value = '{{ user_obj.role.id }}';
+            }
+        }
+    {% endif %}
+}
+
+// Form validation
+document.querySelector('form').addEventListener('submit', function(e) {
+    const password = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('password_confirm').value;
+    
+    if (password && password !== confirmPassword) {
+        e.preventDefault();
+        document.getElementById('password_confirm').classList.add('is-invalid');
+        document.getElementById('password_confirm').focus();
+        return false;
+    }
+    
+    {% if user_obj.id == user.id %}
+        // Additional confirmation for own account
+        const currentRole = '{{ user_obj.role.name }}';
+        const selectedRole = document.getElementById('role_id').selectedOptions[0].text;
+        
+        if (currentRole !== selectedRole || password) {
+            if (!confirm('You are modifying your own account. Some changes may require you to log in again. Continue?')) {
+                e.preventDefault();
+                return false;
+            }
+        }
+    {% endif %}
+});
+</script>
+{% endblock %}

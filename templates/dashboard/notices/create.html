@@ -1,0 +1,299 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Create Notice - Dashboard{% endblock %}
+
+{% block page_title %}Create New Notice{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'dashboard:notice_list' %}" class="btn btn-outline-secondary">
+    <i class="fas fa-arrow-left me-2"></i>Back to Notices
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-plus me-2"></i>Create New Notice
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="noticeForm" method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="title" class="form-label">
+                            Title <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" class="form-control" id="title" name="title" 
+                               maxlength="200" required>
+                        <div class="invalid-feedback" id="title-error"></div>
+                        <div class="form-text">Maximum 200 characters</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="content" class="form-label">
+                            Content <span class="text-danger">*</span>
+                        </label>
+                        <textarea class="form-control" id="content" name="content" 
+                                  rows="10" required></textarea>
+                        <div class="invalid-feedback" id="content-error"></div>
+                        <div class="form-text">Write the full content of your notice here</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="published" name="published">
+                            <label class="form-check-label" for="published">
+                                <strong>Publish immediately</strong>
+                            </label>
+                            <div class="form-text">
+                                If checked, the notice will be visible to the public immediately. 
+                                If unchecked, it will be saved as a draft.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Create Notice
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="saveDraft()">
+                                <i class="fas fa-file-alt me-2"></i>Save as Draft
+                            </button>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <a href="{% url 'dashboard:notice_list' %}" class="btn btn-outline-danger">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Preview Card -->
+        <div class="card mt-4" id="previewCard" style="display: none;">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-eye me-2"></i>Preview
+                </h5>
+            </div>
+            <div class="card-body">
+                <h4 id="previewTitle"></h4>
+                <div id="previewContent" class="mt-3"></div>
+                <hr>
+                <small class="text-muted">
+                    <i class="fas fa-user me-1"></i>{{ user.get_full_name|default:user.username }}
+                    <span class="mx-2">•</span>
+                    <i class="fas fa-calendar me-1"></i><span id="previewDate"></span>
+                    <span class="mx-2">•</span>
+                    <span id="previewStatus" class="badge"></span>
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Get CSRF token
+function getCsrfToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+           document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+}
+
+// Form submission
+document.getElementById('noticeForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const noticeData = {
+        title: formData.get('title'),
+        content: formData.get('content'),
+        published: formData.has('published')
+    };
+    
+    // Clear previous errors
+    clearErrors();
+    
+    try {
+        const response = await fetch('/dashboard/api/notices/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify(noticeData)
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            showAlert('success', data.message);
+            // Redirect to notice list after a short delay
+            setTimeout(() => {
+                window.location.href = '{% url "dashboard:notice_list" %}';
+            }, 1500);
+        } else {
+            if (data.details) {
+                displayErrors(data.details);
+            } else {
+                showAlert('error', data.error || 'Failed to create notice');
+            }
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showAlert('error', 'An error occurred while creating the notice');
+    }
+});
+
+// Save as draft
+function saveDraft() {
+    // Uncheck published checkbox
+    document.getElementById('published').checked = false;
+    // Submit the form
+    document.getElementById('noticeForm').dispatchEvent(new Event('submit'));
+}
+
+// Clear form errors
+function clearErrors() {
+    document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+    document.querySelectorAll('.invalid-feedback').forEach(el => el.textContent = '');
+}
+
+// Display form errors
+function displayErrors(errors) {
+    for (const [field, messages] of Object.entries(errors)) {
+        const fieldElement = document.getElementById(field);
+        const errorElement = document.getElementById(`${field}-error`);
+        
+        if (fieldElement && errorElement) {
+            fieldElement.classList.add('is-invalid');
+            errorElement.textContent = Array.isArray(messages) ? messages[0] : messages;
+        }
+    }
+}
+
+// Show alert messages
+function showAlert(type, message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    // Insert at the top of the main content
+    const mainContent = document.querySelector('main .container-fluid');
+    mainContent.insertBefore(alertDiv, mainContent.firstChild);
+    
+    // Auto-hide after 5 seconds
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+
+// Live preview functionality
+function updatePreview() {
+    const title = document.getElementById('title').value;
+    const content = document.getElementById('content').value;
+    const published = document.getElementById('published').checked;
+    
+    if (title || content) {
+        document.getElementById('previewCard').style.display = 'block';
+        document.getElementById('previewTitle').textContent = title || 'Untitled Notice';
+        document.getElementById('previewContent').innerHTML = content.replace(/\n/g, '<br>') || 'No content';
+        document.getElementById('previewDate').textContent = new Date().toLocaleDateString();
+        
+        const statusBadge = document.getElementById('previewStatus');
+        if (published) {
+            statusBadge.textContent = 'Published';
+            statusBadge.className = 'badge bg-success';
+        } else {
+            statusBadge.textContent = 'Draft';
+            statusBadge.className = 'badge bg-warning';
+        }
+    } else {
+        document.getElementById('previewCard').style.display = 'none';
+    }
+}
+
+// Add event listeners for live preview
+document.getElementById('title').addEventListener('input', updatePreview);
+document.getElementById('content').addEventListener('input', updatePreview);
+document.getElementById('published').addEventListener('change', updatePreview);
+
+// Character count for title
+document.getElementById('title').addEventListener('input', function() {
+    const maxLength = 200;
+    const currentLength = this.value.length;
+    const remaining = maxLength - currentLength;
+    
+    let formText = this.parentNode.querySelector('.form-text');
+    if (remaining < 20) {
+        formText.textContent = `${remaining} characters remaining`;
+        formText.className = 'form-text text-warning';
+    } else {
+        formText.textContent = 'Maximum 200 characters';
+        formText.className = 'form-text';
+    }
+});
+
+// Auto-save functionality (optional)
+let autoSaveTimeout;
+function autoSave() {
+    clearTimeout(autoSaveTimeout);
+    autoSaveTimeout = setTimeout(() => {
+        const title = document.getElementById('title').value;
+        const content = document.getElementById('content').value;
+        
+        if (title || content) {
+            // Save to localStorage as backup
+            localStorage.setItem('notice_draft', JSON.stringify({
+                title: title,
+                content: content,
+                timestamp: Date.now()
+            }));
+        }
+    }, 2000); // Auto-save after 2 seconds of inactivity
+}
+
+document.getElementById('title').addEventListener('input', autoSave);
+document.getElementById('content').addEventListener('input', autoSave);
+
+// Load draft from localStorage on page load
+window.addEventListener('load', function() {
+    const draft = localStorage.getItem('notice_draft');
+    if (draft) {
+        try {
+            const draftData = JSON.parse(draft);
+            // Only load if draft is less than 24 hours old
+            if (Date.now() - draftData.timestamp < 24 * 60 * 60 * 1000) {
+                if (confirm('A draft was found. Would you like to restore it?')) {
+                    document.getElementById('title').value = draftData.title || '';
+                    document.getElementById('content').value = draftData.content || '';
+                    updatePreview();
+                }
+            }
+        } catch (e) {
+            // Invalid draft data, ignore
+        }
+    }
+});
+
+// Clear draft when form is successfully submitted
+window.addEventListener('beforeunload', function() {
+    // Only clear if we're navigating away after successful submission
+    if (window.location.href.includes('notice_list')) {
+        localStorage.removeItem('notice_draft');
+    }
+});
+</script>
+{% endblock %}

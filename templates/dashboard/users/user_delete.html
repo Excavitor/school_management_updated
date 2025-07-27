@@ -1,0 +1,213 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Delete User - Dashboard{% endblock %}
+
+{% block page_title %}Delete User: {{ user_obj.username }}{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'dashboard:user_list' %}" class="btn btn-outline-secondary">
+    <i class="fas fa-arrow-left me-2"></i>Back to Users
+</a>
+
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Confirm User Deletion
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- Warning Message -->
+                <div class="alert alert-danger" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Warning:</strong> This action cannot be undone. All user data will be permanently deleted.
+                </div>
+                
+                <!-- User Information -->
+                <div class="d-flex align-items-center p-3 bg-light rounded mb-4">
+                    <div class="avatar-circle me-3">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div>
+                        <h6 class="mb-1">{{ user_obj.get_full_name|default:user_obj.username }}</h6>
+                        <p class="mb-1 text-muted">@{{ user_obj.username }}</p>
+                        <p class="mb-1 text-muted">{{ user_obj.email }}</p>
+                        <div>
+                            <span class="badge bg-{% if user_obj.role.name == 'SuperAdmin' %}danger{% elif user_obj.role.name == 'Admin' %}warning{% elif user_obj.role.name == 'Teacher' %}info{% else %}secondary{% endif %} me-2">
+                                {{ user_obj.role.name }}
+                            </span>
+                            {% if user_obj.is_active %}
+                                <span class="badge bg-success">Active</span>
+                            {% else %}
+                                <span class="badge bg-danger">Inactive</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Account Details -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <strong>Phone Number:</strong><br>
+                        <span class="text-muted">{{ user_obj.phone_number }}</span>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Account Created:</strong><br>
+                        <span class="text-muted">{{ user_obj.date_joined|date:"M d, Y" }}</span>
+                    </div>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <strong>Last Login:</strong><br>
+                        {% if user_obj.last_login %}
+                            <span class="text-muted">{{ user_obj.last_login|date:"M d, Y" }}</span>
+                        {% else %}
+                            <span class="text-muted">Never logged in</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Role:</strong><br>
+                        <span class="text-muted">{{ user_obj.role.name }}</span>
+                    </div>
+                </div>
+                
+                <!-- Data Impact Warning -->
+                <div class="alert alert-warning" role="alert">
+                    <h6 class="alert-heading">
+                        <i class="fas fa-database me-2"></i>Data Impact
+                    </h6>
+                    <p class="mb-0">Deleting this user will:</p>
+                    <ul class="mb-0 mt-2">
+                        <li>Permanently remove the user account and profile</li>
+                        <li>Remove user from all associated records</li>
+                        <li>Update any content created by this user to show "Deleted User"</li>
+                        <li>This action cannot be reversed</li>
+                    </ul>
+                </div>
+                
+                <!-- Confirmation Form -->
+                <form method="post" class="mt-4">
+                    {% csrf_token %}
+                    
+                    <!-- Confirmation Checkbox -->
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="confirm_deletion" required>
+                        <label class="form-check-label" for="confirm_deletion">
+                            I understand that this action cannot be undone and will permanently delete the user account.
+                        </label>
+                    </div>
+                    
+                    <!-- Type Username Confirmation -->
+                    <div class="mb-3">
+                        <label for="username_confirm" class="form-label">
+                            Type <strong>{{ user_obj.username }}</strong> to confirm deletion:
+                        </label>
+                        <input type="text" class="form-control" id="username_confirm" 
+                               placeholder="Enter username to confirm" required>
+                        <div class="invalid-feedback" id="username_error">
+                            Username does not match. Please type exactly: {{ user_obj.username }}
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <!-- Form Actions -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'dashboard:user_list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-danger" id="deleteButton" disabled>
+                            <i class="fas fa-trash me-2"></i>Delete User Permanently
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Additional Information -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Alternative Actions
+                </h6>
+            </div>
+            <div class="card-body">
+                <p class="mb-3">Instead of deleting this user, you might consider:</p>
+                <ul class="mb-3">
+                    <li><strong>Deactivating:</strong> Disable the account without losing data</li>
+                    <li><strong>Role Change:</strong> Change the user's role to limit access</li>
+                    <li><strong>Password Reset:</strong> Reset the user's password if needed</li>
+                </ul>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'dashboard:user_edit' user_obj.id %}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-edit me-1"></i>Edit User Instead
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.avatar-circle {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: #6c757d;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 20px;
+}
+</style>
+
+<script>
+const targetUsername = '{{ user_obj.username }}';
+const confirmCheckbox = document.getElementById('confirm_deletion');
+const usernameInput = document.getElementById('username_confirm');
+const deleteButton = document.getElementById('deleteButton');
+const usernameError = document.getElementById('username_error');
+
+// Function to check if form is valid
+function checkFormValidity() {
+    const isChecked = confirmCheckbox.checked;
+    const usernameMatches = usernameInput.value === targetUsername;
+    
+    if (usernameInput.value && !usernameMatches) {
+        usernameInput.classList.add('is-invalid');
+        usernameError.style.display = 'block';
+    } else {
+        usernameInput.classList.remove('is-invalid');
+        usernameError.style.display = 'none';
+    }
+    
+    deleteButton.disabled = !(isChecked && usernameMatches);
+}
+
+// Event listeners
+confirmCheckbox.addEventListener('change', checkFormValidity);
+usernameInput.addEventListener('input', checkFormValidity);
+
+// Form submission confirmation
+document.querySelector('form').addEventListener('submit', function(e) {
+    if (!confirm(`Are you absolutely sure you want to delete user "${targetUsername}"? This action cannot be undone.`)) {
+        e.preventDefault();
+        return false;
+    }
+});
+
+// Prevent accidental form submission
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && e.target.tagName !== 'BUTTON') {
+        e.preventDefault();
+    }
+});
+</script>
+{% endblock %}
