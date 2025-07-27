@@ -102,6 +102,12 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Custom User Model
 AUTH_USER_MODEL = 'accounts.CustomUser'
 
+# Authentication backends
+AUTHENTICATION_BACKENDS = [
+    'accounts.backends.EmailOrUsernameModelBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+
 # Login/Logout URLs
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/dashboard/'
@@ -143,7 +149,7 @@ SIMPLE_JWT = {
 
 # Djoser
 DJOSER = {
-    'LOGIN_FIELD': 'username',
+    'LOGIN_FIELD': 'email',
     'USER_CREATE_PASSWORD_RETYPE': True,
     'USERNAME_CHANGED_EMAIL_CONFIRMATION': True,
     'PASSWORD_CHANGED_EMAIL_CONFIRMATION': True,

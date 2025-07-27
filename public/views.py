@@ -305,7 +305,7 @@ class LoginView(TemplateView):
 
             if not username or not password:
                 return JsonResponse(
-                    {"error": "Username and password are required"}, status=400
+                    {"error": "Email and password are required"}, status=400
                 )
 
             # Authenticate user
@@ -335,7 +335,7 @@ class LoginView(TemplateView):
                     return JsonResponse({"error": "Account is disabled"}, status=400)
             else:
                 return JsonResponse(
-                    {"error": "Invalid username or password"}, status=400
+                    {"error": "Invalid email or password"}, status=400
                 )
 
         except json.JSONDecodeError:

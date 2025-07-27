@@ -17,7 +17,21 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from rest_framework.pagination import PageNumberPagination
-from accounts.permissions import IsAdminOrSuperAdminPermission, IsSuperAdminPermission
+from accounts.permissions import (
+    IsAdminOrSuperAdminPermission, 
+    IsSuperAdminPermission,
+    NoticeManagementPermission,
+    ApplicationManagementPermission,
+    CanViewUserPermission,
+    CanAddUserPermission,
+    CanUpdateUserPermission,
+    CanDeleteUserPermission,
+    CanViewRolePermission,
+    CanAddRolePermission,
+    CanUpdateRolePermission,
+    CanDeleteRolePermission,
+    CanExportDataPermission
+)
 from accounts.models import CustomUser, Role, validate_bangladeshi_phone
 from public.models import Notice, AdmissionApplication
 from .serializers import (
@@ -41,7 +55,7 @@ class DashboardPagination(PageNumberPagination):
 class DashboardStatsAPIView(APIView):
     """API view for dashboard statistics."""
 
-    permission_classes = [IsAuthenticated, IsAdminOrSuperAdminPermission]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         """Get dashboard statistics."""
@@ -884,7 +898,7 @@ class NoticeViewSet(ModelViewSet):
     """ViewSet for notice management."""
 
     serializer_class = NoticeManagementSerializer
-    permission_classes = [IsAuthenticated, IsAdminOrSuperAdminPermission]
+    permission_classes = [IsAuthenticated, NoticeManagementPermission]
     pagination_class = DashboardPagination
 
     def get_queryset(self):
@@ -953,7 +967,7 @@ class AdmissionApplicationViewSet(ModelViewSet):
     """ViewSet for admission application management."""
 
     serializer_class = AdmissionApplicationManagementSerializer
-    permission_classes = [IsAuthenticated, IsAdminOrSuperAdminPermission]
+    permission_classes = [IsAuthenticated, ApplicationManagementPermission]
     pagination_class = DashboardPagination
 
     def get_queryset(self):

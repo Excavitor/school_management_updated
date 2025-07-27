@@ -25,6 +25,12 @@ class BaseRecaptchaForm(ValidationMixin, forms.Form):
 class AdmissionApplicationForm(BaseRecaptchaForm, forms.ModelForm):
     """Admission application form with validation."""
 
+    terms = forms.BooleanField(
+        required=True,
+        error_messages={'required': 'You must agree to the terms and conditions to proceed.'},
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
+
     class Meta:
         model = AdmissionApplication
         fields = ["student_name", "student_dob", "enrolled_class", "address",
@@ -103,6 +109,11 @@ class UserRegistrationForm(BaseRecaptchaForm, forms.ModelForm):
     password2 = forms.CharField(label="Confirm Password *", widget=forms.PasswordInput(
         attrs={"class": "form-control", "placeholder": "Confirm your password"}),
         help_text="Enter the same password as above for verification")
+    terms = forms.BooleanField(
+        required=True,
+        error_messages={'required': 'You must agree to the terms and conditions to proceed.'},
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
 
     class Meta:
         model = CustomUser

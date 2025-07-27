@@ -17,8 +17,8 @@
                         {% csrf_token %}
                         
                         <div class="mb-3">
-                            <label for="username" class="form-label">Username or Email</label>
-                            <input type="text" class="form-control" id="username" name="username" required>
+                            <label for="username" class="form-label">Email Address</label>
+                            <input type="email" class="form-control" id="username" name="username" placeholder="Enter your email address" required>
                             <div class="invalid-feedback" id="username-error"></div>
                         </div>
                         
@@ -87,7 +87,7 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
             // Handle errors
             const errorMessage = data.error || 'Login failed. Please try again.';
             
-            if (errorMessage.includes('username') || errorMessage.includes('password')) {
+            if (errorMessage.includes('email') || errorMessage.includes('password')) {
                 document.getElementById('username').classList.add('is-invalid');
                 document.getElementById('username-error').textContent = errorMessage;
             } else {

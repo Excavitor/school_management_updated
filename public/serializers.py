@@ -48,6 +48,7 @@ class AdmissionApplicationCreateSerializer(
 ):
     """Serializer for creating admission applications with reCAPTCHA validation."""
 
+    terms = serializers.BooleanField(required=True, error_messages={'required': 'You must agree to the terms and conditions to proceed.'})
     captcha = ReCaptchaField()
 
     class Meta:
@@ -61,6 +62,7 @@ class AdmissionApplicationCreateSerializer(
             "guardian_mobile",
             "guardian_email",
             "message",
+            "terms",
             "captcha",
         ]
 
@@ -151,6 +153,14 @@ class AdmissionApplicationCreateSerializer(
         return value.strip() if value else ""
 
     def validate(self, attrs):
+        # Check terms acceptance
+        if not attrs.get("terms"):
+            raise serializers.ValidationError(
+                {"terms": "You must agree to the terms and conditions to proceed."}
+            )
+
+        attrs.pop("terms", None)  # Remove terms from validated data as it's not a model field
+
         # Use the validation mixin for age/class validation
         if "student_dob" in attrs and "enrolled_class" in attrs:
             self.validate_student_age_for_class(
@@ -167,6 +177,7 @@ class UserRegistrationSerializer(ValidationMixin, serializers.ModelSerializer):
     email = serializers.EmailField(required=True)
     first_name = serializers.CharField(required=True, max_length=150)
     last_name = serializers.CharField(required=True, max_length=150)
+    terms = serializers.BooleanField(required=True, error_messages={'required': 'You must agree to the terms and conditions to proceed.'})
     captcha = ReCaptchaField()
 
     class Meta:
@@ -179,6 +190,7 @@ class UserRegistrationSerializer(ValidationMixin, serializers.ModelSerializer):
             "phone_number",
             "password",
             "password_confirm",
+            "terms",
             "captcha",
         )
 
@@ -208,6 +220,14 @@ class UserRegistrationSerializer(ValidationMixin, serializers.ModelSerializer):
             )
 
         attrs.pop("password_confirm", None)
+
+        # Check terms acceptance
+        if not attrs.get("terms"):
+            raise serializers.ValidationError(
+                {"terms": "You must agree to the terms and conditions to proceed."}
+            )
+
+        attrs.pop("terms", None)  # Remove terms from validated data as it's not a model field
 
         # Check if username is similar to email
         username = attrs.get("username", "")
